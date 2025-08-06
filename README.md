@@ -70,13 +70,14 @@ outputs: |
   workflow=:workflow
 ```
 
+If any paths did not match the changed files, the output value is empty.
+
 This feature reduces a number of modules to process in a workflow.
 
 ### Feature: Wildcard fallback
 
 This action may fallback to generate wildcard patterns when the following cases:
 
-- Any pattern in `paths` did not match
 - Any pattern in `paths-fallback` matched
 - Pull request contains more than 1,000 changed files
 
