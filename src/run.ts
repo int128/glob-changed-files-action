@@ -66,11 +66,6 @@ const matchChangedFiles = async (inputs: Inputs, context: Context, octokit: Octo
   }
 
   const groups = match.matchGroups(inputs.paths, changedFiles)
-  if (groups.length === 0) {
-    core.info(`Fallback to wildcard because paths did not match to any changed files`)
-    return fallbackToWildcard(inputs.outputsMap)
-  }
-
   core.info(`Transform paths by the changed files`)
   const variableMap = new Map<string, string[]>()
   for (const [key, pattern] of inputs.outputsMap) {
