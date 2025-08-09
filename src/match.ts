@@ -3,10 +3,10 @@ import { createHash } from 'crypto'
 export type Groups = { [key: string]: string | undefined }
 
 export const matchAny = (patterns: string[], changedFiles: string[]): boolean => {
-  const regexps = patterns.map(compilePathToRegexp)
+  const matchers = patterns.map(compileMatcher)
   for (const changedFile of changedFiles) {
-    for (const re of regexps) {
-      if (re.test(changedFile)) {
+    for (const matcher of matchers) {
+      if (matcher.test(changedFile)) {
         return true
       }
     }
@@ -15,14 +15,14 @@ export const matchAny = (patterns: string[], changedFiles: string[]): boolean =>
 }
 
 export const matchGroups = (patterns: string[], changedFiles: string[]): Groups[] => {
-  const regexps = patterns.map(compilePathToRegexp)
+  const matchers = patterns.map(compilePattern)
   const groupsSet = new Map<string, Groups>()
   for (const changedFile of changedFiles) {
-    for (const re of regexps) {
-      const matcher = re.exec(changedFile)
-      if (matcher?.groups !== undefined) {
-        const dedupeKey = computeKeyOfGroups(matcher.groups)
-        groupsSet.set(dedupeKey, matcher.groups)
+    for (const matcher of matchers) {
+      const match = matcher.exec(changedFile)
+      if (match?.groups) {
+        const dedupeKey = computeKeyOfGroups(match.groups)
+        groupsSet.set(dedupeKey, match.groups)
       }
     }
   }
@@ -41,8 +41,21 @@ const computeKeyOfGroups = (groups: Groups): string => {
   return h.digest('hex')
 }
 
-const compilePathToRegexp = (s: string): RegExp => {
-  const pathSegments = s.split('/').map((pathSegment) =>
+const compileMatcher = (pattern: string) => {
+  if (pattern.startsWith('!')) {
+    return {
+      negative: true,
+      regexp: compilePattern(pattern.slice(1)),
+    }
+  }
+  return {
+    negative: false,
+    regexp: compilePattern(pattern),
+  }
+}
+
+const compilePattern = (pattern: string): RegExp => {
+  const pathSegments = pattern.split('/').map((pathSegment) =>
     pathSegment
       .replaceAll('.', '\\.')
       .replaceAll('**', '.+?')
