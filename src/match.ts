@@ -17,24 +17,24 @@ export const matchAny = (patterns: string[], changedFiles: string[]): boolean =>
 
 export const matchGroups = (patterns: string[], changedFiles: string[]): VariableMap[] => {
   const matchers = patterns.map(compileMatcher)
-  const mergedVariableMaps = []
+  const variableMaps = []
   for (const changedFile of changedFiles) {
-    let matchedVariableMaps = []
+    let variableMapsForChangedFile = []
     for (const matcher of matchers) {
       if (matcher.negative) {
         if (matcher.regexp.test(changedFile)) {
-          matchedVariableMaps = []
+          variableMapsForChangedFile = []
         }
       } else {
         const match = matcher.regexp.exec(changedFile)
         if (match?.groups) {
-          matchedVariableMaps.push(match.groups)
+          variableMapsForChangedFile.push(match.groups)
         }
       }
     }
-    mergedVariableMaps.push(...matchedVariableMaps)
+    variableMaps.push(...variableMapsForChangedFile)
   }
-  return dedupeVariableMaps(mergedVariableMaps)
+  return dedupeVariableMaps(variableMaps)
 }
 
 const dedupeVariableMaps = (variableMaps: VariableMap[]): VariableMap[] => {
