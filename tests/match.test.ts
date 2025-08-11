@@ -113,7 +113,7 @@ describe('matchGroups', () => {
   describe('negative patterns', () => {
     it('excludes files matching negative patterns', () => {
       const variableMaps = matchGroups(
-        ['clusters/:cluster/:component/**', '!clusters/:cluster/:component/*.md'],
+        ['clusters/:cluster/:component/**', '!**/*.md'],
         ['clusters/staging/cluster-autoscaler/README.md', 'clusters/production/coredns/README.md'],
       )
       expect(variableMaps).toEqual([])
@@ -121,13 +121,13 @@ describe('matchGroups', () => {
 
     it('includes files not matching negative patterns', () => {
       const variableMaps = matchGroups(
-        ['clusters/:cluster/:component/**', '!clusters/:cluster/:component/*.md'],
-        ['clusters/staging/cluster-autoscaler/README.md', 'clusters/production/coredns/deployment.yaml'],
+        ['clusters/:cluster/:component/**', '!**/*.md'],
+        ['clusters/staging/cluster-autoscaler/helmfile.yaml', 'clusters/production/coredns/README.md'],
       )
       expect(variableMaps).toEqual([
         {
-          cluster: 'production',
-          component: 'coredns',
+          cluster: 'staging',
+          component: 'cluster-autoscaler',
         },
       ])
     })
