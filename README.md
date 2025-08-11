@@ -70,7 +70,20 @@ outputs: |
   workflow=:workflow
 ```
 
-If any paths did not match the changed files, the output value is empty.
+If a pattern is prefixed with `!`, it is treated as a negative pattern.
+For example, if the following path patterns are given,
+
+```yaml
+paths: |
+  clusters/:cluster/:component/**
+  !**/*.md
+outputs: |
+  kustomization=clusters/:cluster/:component/kustomization.yaml
+```
+
+this action ignores files matching negative patterns such as `README.md`.
+
+If any changed files did not match the patterns, the output value is empty.
 
 This feature reduces a number of modules to process in a workflow.
 
