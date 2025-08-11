@@ -1,10 +1,10 @@
 export type VariableMap = Record<string, string>
 
 export const matchAny = (patterns: string[], changedFiles: string[]): boolean => {
-  const regexps = patterns.map(compilePathToRegexp)
+  const matchers = patterns.map(compilePattern)
   for (const changedFile of changedFiles) {
-    for (const re of regexps) {
-      if (re.test(changedFile)) {
+    for (const matcher of matchers) {
+      if (matcher.test(changedFile)) {
         return true
       }
     }
@@ -13,13 +13,13 @@ export const matchAny = (patterns: string[], changedFiles: string[]): boolean =>
 }
 
 export const matchGroups = (patterns: string[], changedFiles: string[]): VariableMap[] => {
-  const regexps = patterns.map(compilePathToRegexp)
+  const matchers = patterns.map(compilePattern)
   const variableMaps = []
   for (const changedFile of changedFiles) {
-    for (const re of regexps) {
-      const matcher = re.exec(changedFile)
-      if (matcher?.groups !== undefined) {
-        variableMaps.push(matcher.groups)
+    for (const matcher of matchers) {
+      const matched = matcher.exec(changedFile)
+      if (matched?.groups !== undefined) {
+        variableMaps.push(matched.groups)
       }
     }
   }
@@ -34,8 +34,8 @@ const dedupeVariableMaps = (variableMaps: VariableMap[]): VariableMap[] => {
   return [...deduped.values()]
 }
 
-const compilePathToRegexp = (s: string): RegExp => {
-  const pathSegments = s.split('/').map((pathSegment) =>
+const compilePattern = (pattern: string): RegExp => {
+  const pathSegments = pattern.split('/').map((pathSegment) =>
     pathSegment
       .replaceAll('.', '\\.')
       .replaceAll('**', '.+?')
