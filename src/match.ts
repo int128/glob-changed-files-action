@@ -1,44 +1,49 @@
-import { createHash } from 'crypto'
-
 export type Groups = { [key: string]: string | undefined }
 
 export const matchAny = (patterns: string[], changedFiles: string[]): boolean => {
   const matchers = patterns.map(compileMatcher)
-  for (const changedFile of changedFiles) {
+  return changedFiles.some((changedFile) => {
+    let matched = false
     for (const matcher of matchers) {
-      if (matcher.test(changedFile)) {
-        return true
+      if (matcher.negative) {
+        matched = matched && !matcher.regexp.test(changedFile)
+      } else {
+        matched = matched || matcher.regexp.test(changedFile)
       }
     }
-  }
-  return false
+    return matched
+  })
 }
 
 export const matchGroups = (patterns: string[], changedFiles: string[]): Groups[] => {
-  const matchers = patterns.map(compilePattern)
-  const groupsSet = new Map<string, Groups>()
+  const matchers = patterns.map(compileMatcher)
+  const mergedGroupsSet = []
   for (const changedFile of changedFiles) {
+    let matchedGroupsSet = []
     for (const matcher of matchers) {
-      const match = matcher.exec(changedFile)
-      if (match?.groups) {
-        const dedupeKey = computeKeyOfGroups(match.groups)
-        groupsSet.set(dedupeKey, match.groups)
+      if (matcher.negative) {
+        if (matcher.regexp.test(changedFile)) {
+          matchedGroupsSet = []
+        }
+      } else {
+        const match = matcher.regexp.exec(changedFile)
+        if (match?.groups) {
+          matchedGroupsSet.push(match.groups)
+        }
       }
     }
+    mergedGroupsSet.push(...matchedGroupsSet)
   }
-  return [...groupsSet.values()]
+  return dedupeGroupsSet(mergedGroupsSet)
 }
 
-const computeKeyOfGroups = (groups: Groups): string => {
-  const h = createHash('sha256')
-  for (const k of Object.keys(groups)) {
-    const v = groups[k]
-    h.write(k)
-    h.write('\0')
-    h.write(v)
-    h.write('\0')
+const dedupeGroupsSet = (groupsSet: Groups[]): Groups[] => {
+  const uniqueGroups = new Map<string, Groups>()
+  for (const groups of groupsSet) {
+    const key = JSON.stringify(groups)
+    uniqueGroups.set(key, groups)
   }
-  return h.digest('hex')
+  return Array.from(uniqueGroups.values())
 }
 
 const compileMatcher = (pattern: string) => {
