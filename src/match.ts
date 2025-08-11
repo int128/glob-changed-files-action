@@ -1,12 +1,10 @@
-import { createHash } from 'crypto'
-
-export type Groups = { [key: string]: string | undefined }
+export type VariableMap = Record<string, string>
 
 export const matchAny = (patterns: string[], changedFiles: string[]): boolean => {
-  const regexps = patterns.map(compilePathToRegexp)
+  const matchers = patterns.map(compilePattern)
   for (const changedFile of changedFiles) {
-    for (const re of regexps) {
-      if (re.test(changedFile)) {
+    for (const matcher of matchers) {
+      if (matcher.test(changedFile)) {
         return true
       }
     }
@@ -14,35 +12,30 @@ export const matchAny = (patterns: string[], changedFiles: string[]): boolean =>
   return false
 }
 
-export const matchGroups = (patterns: string[], changedFiles: string[]): Groups[] => {
-  const regexps = patterns.map(compilePathToRegexp)
-  const groupsSet = new Map<string, Groups>()
+export const matchGroups = (patterns: string[], changedFiles: string[]): VariableMap[] => {
+  const matchers = patterns.map(compilePattern)
+  const variableMaps = []
   for (const changedFile of changedFiles) {
-    for (const re of regexps) {
-      const matcher = re.exec(changedFile)
-      if (matcher?.groups !== undefined) {
-        const dedupeKey = computeKeyOfGroups(matcher.groups)
-        groupsSet.set(dedupeKey, matcher.groups)
+    for (const matcher of matchers) {
+      const matched = matcher.exec(changedFile)
+      if (matched?.groups !== undefined) {
+        variableMaps.push(matched.groups)
       }
     }
   }
-  return [...groupsSet.values()]
+  return dedupeVariableMaps(variableMaps)
 }
 
-const computeKeyOfGroups = (groups: Groups): string => {
-  const h = createHash('sha256')
-  for (const k of Object.keys(groups)) {
-    const v = groups[k]
-    h.write(k)
-    h.write('\0')
-    h.write(v)
-    h.write('\0')
+const dedupeVariableMaps = (variableMaps: VariableMap[]): VariableMap[] => {
+  const deduped = new Map<string, VariableMap>()
+  for (const variableMap of variableMaps) {
+    deduped.set(JSON.stringify(variableMap), variableMap)
   }
-  return h.digest('hex')
+  return [...deduped.values()]
 }
 
-const compilePathToRegexp = (s: string): RegExp => {
-  const pathSegments = s.split('/').map((pathSegment) =>
+const compilePattern = (pattern: string): RegExp => {
+  const pathSegments = pattern.split('/').map((pathSegment) =>
     pathSegment
       .replaceAll('.', '\\.')
       .replaceAll('**', '.+?')
@@ -52,14 +45,14 @@ const compilePathToRegexp = (s: string): RegExp => {
   return new RegExp(`^${pathSegments.join('/')}$`)
 }
 
-export const transform = (pattern: string, groupsSet: Groups[]): string[] => {
+export const transform = (pattern: string, variableMaps: VariableMap[]): string[] => {
   const paths = new Set<string>()
-  for (const groups of groupsSet) {
+  for (const variableMap of variableMaps) {
     const path = pattern
       .split('/')
       .map((pathSegment) =>
         pathSegment.replaceAll(/:([a-zA-Z0-9]+)/g, (_, variableKey: string): string => {
-          const variableValue = groups[variableKey]
+          const variableValue = variableMap[variableKey]
           if (variableValue === undefined) {
             return '*'
           }
