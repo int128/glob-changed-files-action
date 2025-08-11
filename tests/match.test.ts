@@ -1,5 +1,5 @@
 import { it, expect, describe } from 'vitest'
-import { Groups, matchAny, matchGroups, transform, transformToWildcard } from '../src/match.js'
+import { VariableMap, matchAny, matchGroups, transform, transformToWildcard } from '../src/match.js'
 
 describe('matchAny', () => {
   it('matches against patterns', () => {
@@ -72,7 +72,7 @@ describe('matchAny', () => {
 
 describe('matchGroups', () => {
   it('matches against path variables', () => {
-    const groupsSet = matchGroups(
+    const variableMaps = matchGroups(
       ['clusters/:cluster/:component/**'],
       [
         'clusters/staging/cluster-autoscaler/helmfile.yaml',
@@ -80,7 +80,7 @@ describe('matchGroups', () => {
         'clusters/production/coredns/deployment.yaml',
       ],
     )
-    expect(groupsSet).toEqual([
+    expect(variableMaps).toEqual([
       {
         cluster: 'staging',
         component: 'cluster-autoscaler',
@@ -93,32 +93,32 @@ describe('matchGroups', () => {
   })
 
   it('matches a trailing path variable', () => {
-    const groupsSet = matchGroups(
+    const variableMaps = matchGroups(
       ['.github/workflows/:workflow'],
       ['.github/workflows/ci.yaml', '.github/workflows/deploy.yaml', '.github/workflows/test.yaml'],
     )
-    expect(groupsSet).toEqual([{ workflow: 'ci.yaml' }, { workflow: 'deploy.yaml' }, { workflow: 'test.yaml' }])
+    expect(variableMaps).toEqual([{ workflow: 'ci.yaml' }, { workflow: 'deploy.yaml' }, { workflow: 'test.yaml' }])
   })
 
   it('matches a partial path variable', () => {
-    const groupsSet = matchGroups(
+    const variableMaps = matchGroups(
       ['.github/workflows/:workflow.yaml'],
       ['.github/workflows/ci.yaml', '.github/workflows/deploy.yaml', '.github/workflows/test.yaml'],
     )
-    expect(groupsSet).toEqual([{ workflow: 'ci' }, { workflow: 'deploy' }, { workflow: 'test' }])
+    expect(variableMaps).toEqual([{ workflow: 'ci' }, { workflow: 'deploy' }, { workflow: 'test' }])
   })
 
   it('returns empty array when no files match', () => {
-    const groupsSet = matchGroups(['clusters/:cluster/:component/**'], ['src/main.ts', 'docs/README.md'])
-    expect(groupsSet).toEqual([])
+    const variableMaps = matchGroups(['clusters/:cluster/:component/**'], ['src/main.ts', 'docs/README.md'])
+    expect(variableMaps).toEqual([])
   })
 
   it('deduplicates identical groups', () => {
-    const groupsSet = matchGroups(
+    const variableMaps = matchGroups(
       ['clusters/:cluster/:component/**'],
       ['clusters/staging/app/file1.yaml', 'clusters/staging/app/file2.yaml', 'clusters/staging/app/file3.yaml'],
     )
-    expect(groupsSet).toEqual([
+    expect(variableMaps).toEqual([
       {
         cluster: 'staging',
         component: 'app',
@@ -127,11 +127,11 @@ describe('matchGroups', () => {
   })
 
   it('handles multiple patterns', () => {
-    const groupsSet = matchGroups(
+    const variableMaps = matchGroups(
       ['clusters/:cluster/:component/**', 'apps/:env/:service/**'],
       ['clusters/staging/app/file.yaml', 'apps/dev/api/config.json'],
     )
-    expect(groupsSet).toEqual([
+    expect(variableMaps).toEqual([
       {
         cluster: 'staging',
         component: 'app',
@@ -144,8 +144,8 @@ describe('matchGroups', () => {
   })
 
   it('handles patterns with no path variables', () => {
-    const groupsSet = matchGroups(['src/**/*.ts'], ['src/main.ts', 'src/utils/helper.ts'])
-    expect(groupsSet).toEqual([])
+    const variableMaps = matchGroups(['src/**/*.ts'], ['src/main.ts', 'src/utils/helper.ts'])
+    expect(variableMaps).toEqual([])
   })
 
   it('handles empty strings', () => {
@@ -155,7 +155,7 @@ describe('matchGroups', () => {
 
 describe('transform', () => {
   it('returns paths corresponding to groups', () => {
-    const groupsSet: Groups[] = [
+    const variableMaps: VariableMap[] = [
       {
         cluster: 'staging',
         component: 'cluster-autoscaler',
@@ -165,7 +165,7 @@ describe('transform', () => {
         component: 'coredns',
       },
     ]
-    const paths = transform('clusters/:cluster/:component/kustomization.yaml', groupsSet)
+    const paths = transform('clusters/:cluster/:component/kustomization.yaml', variableMaps)
     expect(paths).toStrictEqual([
       'clusters/staging/cluster-autoscaler/kustomization.yaml',
       'clusters/production/coredns/kustomization.yaml',
@@ -173,8 +173,12 @@ describe('transform', () => {
   })
 
   it('handles a trailing path variable', () => {
-    const groupsSet: Groups[] = [{ workflow: 'ci.yaml' }, { workflow: 'deploy.yaml' }, { workflow: 'test.yaml' }]
-    const paths = transform('.github/workflows/:workflow', groupsSet)
+    const variableMaps: VariableMap[] = [
+      { workflow: 'ci.yaml' },
+      { workflow: 'deploy.yaml' },
+      { workflow: 'test.yaml' },
+    ]
+    const paths = transform('.github/workflows/:workflow', variableMaps)
     expect(paths).toStrictEqual([
       '.github/workflows/ci.yaml',
       '.github/workflows/deploy.yaml',
@@ -183,8 +187,8 @@ describe('transform', () => {
   })
 
   it('handles a partial path variable', () => {
-    const groupsSet: Groups[] = [{ workflow: 'ci' }, { workflow: 'deploy' }, { workflow: 'test' }]
-    const paths = transform('.github/workflows/:workflow.yaml', groupsSet)
+    const variableMaps: VariableMap[] = [{ workflow: 'ci' }, { workflow: 'deploy' }, { workflow: 'test' }]
+    const paths = transform('.github/workflows/:workflow.yaml', variableMaps)
     expect(paths).toStrictEqual([
       '.github/workflows/ci.yaml',
       '.github/workflows/deploy.yaml',
@@ -193,7 +197,7 @@ describe('transform', () => {
   })
 
   it('handles missing group values by replacing with asterisk', () => {
-    const groupsSet: Groups[] = [
+    const variableMaps: VariableMap[] = [
       {
         cluster: 'staging',
         // component is missing
@@ -203,7 +207,7 @@ describe('transform', () => {
         component: 'coredns',
       },
     ]
-    const paths = transform('clusters/:cluster/:component/kustomization.yaml', groupsSet)
+    const paths = transform('clusters/:cluster/:component/kustomization.yaml', variableMaps)
     expect(paths).toStrictEqual([
       'clusters/staging/*/kustomization.yaml',
       'clusters/production/coredns/kustomization.yaml',
@@ -216,7 +220,7 @@ describe('transform', () => {
   })
 
   it('deduplicates identical paths', () => {
-    const groupsSet: Groups[] = [
+    const variableMaps: VariableMap[] = [
       {
         cluster: 'staging',
         component: 'app',
@@ -226,18 +230,18 @@ describe('transform', () => {
         component: 'app',
       },
     ]
-    const paths = transform('clusters/:cluster/:component/kustomization.yaml', groupsSet)
+    const paths = transform('clusters/:cluster/:component/kustomization.yaml', variableMaps)
     expect(paths).toStrictEqual(['clusters/staging/app/kustomization.yaml'])
   })
 
   it('handles patterns without path variables', () => {
-    const groupsSet: Groups[] = [
+    const variableMaps: VariableMap[] = [
       {
         cluster: 'staging',
         component: 'app',
       },
     ]
-    const paths = transform('static/file.yaml', groupsSet)
+    const paths = transform('static/file.yaml', variableMaps)
     expect(paths).toStrictEqual(['static/file.yaml'])
   })
 })

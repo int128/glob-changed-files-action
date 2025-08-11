@@ -1,6 +1,4 @@
-import { createHash } from 'crypto'
-
-export type Groups = { [key: string]: string | undefined }
+export type VariableMap = Record<string, string>
 
 export const matchAny = (patterns: string[], changedFiles: string[]): boolean => {
   const regexps = patterns.map(compilePathToRegexp)
@@ -14,31 +12,26 @@ export const matchAny = (patterns: string[], changedFiles: string[]): boolean =>
   return false
 }
 
-export const matchGroups = (patterns: string[], changedFiles: string[]): Groups[] => {
+export const matchGroups = (patterns: string[], changedFiles: string[]): VariableMap[] => {
   const regexps = patterns.map(compilePathToRegexp)
-  const groupsSet = new Map<string, Groups>()
+  const variableMaps = []
   for (const changedFile of changedFiles) {
     for (const re of regexps) {
       const matcher = re.exec(changedFile)
       if (matcher?.groups !== undefined) {
-        const dedupeKey = computeKeyOfGroups(matcher.groups)
-        groupsSet.set(dedupeKey, matcher.groups)
+        variableMaps.push(matcher.groups)
       }
     }
   }
-  return [...groupsSet.values()]
+  return dedupeVariableMaps(variableMaps)
 }
 
-const computeKeyOfGroups = (groups: Groups): string => {
-  const h = createHash('sha256')
-  for (const k of Object.keys(groups)) {
-    const v = groups[k]
-    h.write(k)
-    h.write('\0')
-    h.write(v)
-    h.write('\0')
+const dedupeVariableMaps = (variableMaps: VariableMap[]): VariableMap[] => {
+  const deduped = new Map<string, VariableMap>()
+  for (const variableMap of variableMaps) {
+    deduped.set(JSON.stringify(variableMap), variableMap)
   }
-  return h.digest('hex')
+  return [...deduped.values()]
 }
 
 const compilePathToRegexp = (s: string): RegExp => {
@@ -52,14 +45,14 @@ const compilePathToRegexp = (s: string): RegExp => {
   return new RegExp(`^${pathSegments.join('/')}$`)
 }
 
-export const transform = (pattern: string, groupsSet: Groups[]): string[] => {
+export const transform = (pattern: string, variableMaps: VariableMap[]): string[] => {
   const paths = new Set<string>()
-  for (const groups of groupsSet) {
+  for (const variableMap of variableMaps) {
     const path = pattern
       .split('/')
       .map((pathSegment) =>
         pathSegment.replaceAll(/:([a-zA-Z0-9]+)/g, (_, variableKey: string): string => {
-          const variableValue = groups[variableKey]
+          const variableValue = variableMap[variableKey]
           if (variableValue === undefined) {
             return '*'
           }
