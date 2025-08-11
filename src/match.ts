@@ -1,4 +1,4 @@
-export type Groups = { [key: string]: string | undefined }
+export type VariableMap = Record<string, string>
 
 export const matchAny = (patterns: string[], changedFiles: string[]): boolean => {
   const matchers = patterns.map(compileMatcher)
@@ -15,35 +15,34 @@ export const matchAny = (patterns: string[], changedFiles: string[]): boolean =>
   })
 }
 
-export const matchGroups = (patterns: string[], changedFiles: string[]): Groups[] => {
+export const matchGroups = (patterns: string[], changedFiles: string[]): VariableMap[] => {
   const matchers = patterns.map(compileMatcher)
-  const mergedGroupsSet = []
+  const mergedVariableMaps = []
   for (const changedFile of changedFiles) {
-    let matchedGroupsSet = []
+    let matchedVariableMaps = []
     for (const matcher of matchers) {
       if (matcher.negative) {
         if (matcher.regexp.test(changedFile)) {
-          matchedGroupsSet = []
+          matchedVariableMaps = []
         }
       } else {
         const match = matcher.regexp.exec(changedFile)
         if (match?.groups) {
-          matchedGroupsSet.push(match.groups)
+          matchedVariableMaps.push(match.groups)
         }
       }
     }
-    mergedGroupsSet.push(...matchedGroupsSet)
+    mergedVariableMaps.push(...matchedVariableMaps)
   }
-  return dedupeGroupsSet(mergedGroupsSet)
+  return dedupeVariableMaps(mergedVariableMaps)
 }
 
-const dedupeGroupsSet = (groupsSet: Groups[]): Groups[] => {
-  const uniqueGroups = new Map<string, Groups>()
-  for (const groups of groupsSet) {
-    const key = JSON.stringify(groups)
-    uniqueGroups.set(key, groups)
+const dedupeVariableMaps = (variableMaps: VariableMap[]): VariableMap[] => {
+  const deduped = new Map<string, VariableMap>()
+  for (const variableMap of variableMaps) {
+    deduped.set(JSON.stringify(variableMap), variableMap)
   }
-  return Array.from(uniqueGroups.values())
+  return [...deduped.values()]
 }
 
 const compileMatcher = (pattern: string) => {
@@ -70,14 +69,14 @@ const compilePattern = (pattern: string): RegExp => {
   return new RegExp(`^${pathSegments.join('/')}$`)
 }
 
-export const transform = (pattern: string, groupsSet: Groups[]): string[] => {
+export const transform = (pattern: string, variableMaps: VariableMap[]): string[] => {
   const paths = new Set<string>()
-  for (const groups of groupsSet) {
+  for (const variableMap of variableMaps) {
     const path = pattern
       .split('/')
       .map((pathSegment) =>
         pathSegment.replaceAll(/:([a-zA-Z0-9]+)/g, (_, variableKey: string): string => {
-          const variableValue = groups[variableKey]
+          const variableValue = variableMap[variableKey]
           if (variableValue === undefined) {
             return '*'
           }
