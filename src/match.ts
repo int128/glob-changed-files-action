@@ -26,7 +26,7 @@ export const matchGroups = (patterns: string[], changedFiles: string[]): Variabl
         }
       } else {
         const matched = matcher.regexp.exec(changedFile)
-        if (matched?.groups) {
+        if (matched?.groups !== undefined) {
           variableMaps.push(matched.groups)
         }
       }
