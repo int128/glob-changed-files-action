@@ -7,17 +7,18 @@ inputs:
   paths-fallback:
     description: Glob patterns to fallback to wildcard (multiline)
     required: false
-  outputs:
-    description: Paths to set into outputs in form of NAME=PATH (multiline)
+  transform:
+    description: Patterns to transform the changed files (multiline)
     required: true
-  outputs-encoding:
-    description: Encoding of outputs, either multiline or json
-    required: true
-    default: multiline
   token:
     description: GitHub token to list the changed files
     required: true
     default: ${{ github.token }}
+outputs:
+  paths:
+    description: Changed files matched by glob patterns (multiline)
+  paths-json:
+    description: Changed files matched by glob patterns (JSON format)
 runs:
   using: 'node20'
   main: 'dist/index.js'

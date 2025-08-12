@@ -6,34 +6,20 @@ import { Octokit } from '@octokit/action'
 type Inputs = {
   paths: string[]
   pathsFallback: string[]
-  outputsMap: Map<string, string>
-  outputsEncoding: 'multiline' | 'json'
+  transform: string[]
 }
 
 type Outputs = {
-  map: Map<string, string>
+  paths: string[]
 }
 
 export const run = async (inputs: Inputs, context: Context, octokit: Octokit): Promise<Outputs> => {
   core.info(`eventName: ${context.eventName}`)
-  core.info(`outputs: ${JSON.stringify([...inputs.outputsMap], undefined, 2)}`)
-
-  const variableMap = await matchChangedFiles(inputs, context, octokit)
-
-  const map = new Map<string, string>()
-  for (const [key, paths] of variableMap) {
-    if (inputs.outputsEncoding === 'json') {
-      map.set(key, JSON.stringify(paths))
-    } else {
-      map.set(key, paths.join('\n'))
-    }
-  }
-  return { map }
+  const paths = await matchChangedFiles(inputs, context, octokit)
+  return { paths }
 }
 
-type VariableMap = Map<string, string[]>
-
-const matchChangedFiles = async (inputs: Inputs, context: Context, octokit: Octokit): Promise<VariableMap> => {
+const matchChangedFiles = async (inputs: Inputs, context: Context, octokit: Octokit): Promise<string[]> => {
   if (!('pull_request' in context.payload && 'number' in context.payload)) {
     core.info(`Fallback to wildcard because not pull_request event`)
     return fallbackToWildcard(inputs.outputsMap)

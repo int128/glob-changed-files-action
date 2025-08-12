@@ -41,24 +41,21 @@ jobs:
         with:
           paths: |
             :dir/**
-          outputs: |
-            dir=:dir
       - run: echo "$DIR"
         env:
-          DIR: ${{ steps.glob-changed-files.outputs.dir }}
+          DIR: ${{ steps.glob-changed-files.outputs.paths }}
 
       - uses: ./
         name: Run int128/glob-changed-files-action
         id: glob-changed-files-json
         with:
           paths: |
-            :dir/**
-          outputs: |
-            dir=:dir
-          outputs-encoding: json
-      - run: jq . <<< "$DIR"
+            :component/**
+          transform: |
+            :component
+      - run: jq . <<< "$JSON"
         env:
-          DIR: ${{ steps.glob-changed-files-json.outputs.dir }}
+          JSON: ${{ steps.glob-changed-files-json.outputs.paths-json }}
 
   generate:
     runs-on: ubuntu-latest
