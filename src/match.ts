@@ -24,11 +24,11 @@ export const matchGroups = (patterns: string[], changedFiles: string[]): Variabl
         if (matcher.regexp.test(changedFile)) {
           variableMaps = []
         }
-      } else {
-        const matched = matcher.regexp.exec(changedFile)
-        if (matched?.groups !== undefined) {
-          variableMaps.push(matched.groups)
-        }
+        continue
+      }
+      const matched = matcher.regexp.exec(changedFile)
+      if (matched?.groups !== undefined) {
+        variableMaps.push(matched.groups)
       }
     }
     return variableMaps
