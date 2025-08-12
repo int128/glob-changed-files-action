@@ -180,14 +180,16 @@ Otherwise, it falls back to wildcard patterns.
 
 ### Inputs
 
-| Name               | Default        | Description                                                  |
-| ------------------ | -------------- | ------------------------------------------------------------ |
-| `paths`            | (required)     | Glob patterns (multiline)                                    |
-| `paths-fallback`   | -              | Glob patterns to fallback to wildcard (multiline)            |
-| `outputs`          | (required)     | Paths to set into outputs in form of `NAME=PATH` (multiline) |
-| `outputs-encoding` | `multiline`    | Encoding of outputs, either `multiline` or `json`            |
-| `token`            | `github.token` | GitHub token to list the changed files                       |
+| Name             | Default        | Description                                         |
+| ---------------- | -------------- | --------------------------------------------------- |
+| `paths`          | (required)     | Glob patterns (multiline)                           |
+| `paths-fallback` | -              | Glob patterns to fallback to wildcard (multiline)   |
+| `transform`      | (required)     | Patterns to transform the changed files (multiline) |
+| `token`          | `github.token` | GitHub token to list the changed files              |
 
 ### Outputs
 
-This action sets the keys defined by `outputs` in inputs.
+| Name         | Description                                          |
+| ------------ | ---------------------------------------------------- |
+| `paths`      | Changed files matched by glob patterns (multiline)   |
+| `paths-json` | Changed files matched by glob patterns (JSON format) |
