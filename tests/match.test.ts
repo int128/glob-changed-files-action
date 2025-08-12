@@ -14,6 +14,24 @@ describe('matchAny', () => {
     expect(matched).toBe(true)
   })
 
+  describe('negative patterns', () => {
+    it('excludes files matching negative patterns', () => {
+      const matched = matchAny(
+        ['clusters/:cluster/:component/**', '!clusters/:cluster/:component/*.md'],
+        ['clusters/staging/cluster-autoscaler/README.md', 'clusters/production/coredns/README.md'],
+      )
+      expect(matched).toBe(false)
+    })
+
+    it('includes files not matching negative patterns', () => {
+      const matched = matchAny(
+        ['clusters/:cluster/:component/**', '!clusters/:cluster/:component/*.md'],
+        ['clusters/staging/cluster-autoscaler/README.md', 'clusters/production/coredns/deployment.yaml'],
+      )
+      expect(matched).toBe(true)
+    })
+  })
+
   it('returns false when no files match any patterns', () => {
     const matched = matchAny(['clusters/:cluster/:component/**'], ['src/main.ts', 'docs/README.md', 'package.json'])
     expect(matched).toBe(false)
@@ -90,6 +108,29 @@ describe('matchGroups', () => {
         component: 'coredns',
       },
     ])
+  })
+
+  describe('negative patterns', () => {
+    it('excludes files matching negative patterns', () => {
+      const variableMaps = matchGroups(
+        ['clusters/:cluster/:component/**', '!**/*.md'],
+        ['clusters/staging/cluster-autoscaler/README.md', 'clusters/production/coredns/README.md'],
+      )
+      expect(variableMaps).toEqual([])
+    })
+
+    it('includes files not matching negative patterns', () => {
+      const variableMaps = matchGroups(
+        ['clusters/:cluster/:component/**', '!**/*.md'],
+        ['clusters/staging/cluster-autoscaler/helmfile.yaml', 'clusters/production/coredns/README.md'],
+      )
+      expect(variableMaps).toEqual([
+        {
+          cluster: 'staging',
+          component: 'cluster-autoscaler',
+        },
+      ])
+    })
   })
 
   it('matches a trailing path variable', () => {

@@ -1,29 +1,39 @@
 export type VariableMap = Record<string, string>
 
 export const matchAny = (patterns: string[], changedFiles: string[]): boolean => {
-  const matchers = patterns.map(compilePattern)
-  for (const changedFile of changedFiles) {
+  const matchers = patterns.map(compileMatcher)
+  return changedFiles.some((changedFile) => {
+    let matched = false
     for (const matcher of matchers) {
-      if (matcher.test(changedFile)) {
-        return true
+      if (matcher.negative) {
+        matched = matched && !matcher.regexp.test(changedFile)
+      } else {
+        matched = matched || matcher.regexp.test(changedFile)
       }
     }
-  }
-  return false
+    return matched
+  })
 }
 
 export const matchGroups = (patterns: string[], changedFiles: string[]): VariableMap[] => {
-  const matchers = patterns.map(compilePattern)
-  const variableMaps = []
-  for (const changedFile of changedFiles) {
+  const matchers = patterns.map(compileMatcher)
+  const allVariableMaps = changedFiles.flatMap((changedFile) => {
+    let variableMaps = []
     for (const matcher of matchers) {
-      const matched = matcher.exec(changedFile)
+      if (matcher.negative) {
+        if (matcher.regexp.test(changedFile)) {
+          variableMaps = []
+        }
+        continue
+      }
+      const matched = matcher.regexp.exec(changedFile)
       if (matched?.groups !== undefined) {
         variableMaps.push(matched.groups)
       }
     }
-  }
-  return dedupeVariableMaps(variableMaps)
+    return variableMaps
+  })
+  return dedupeVariableMaps(allVariableMaps)
 }
 
 const dedupeVariableMaps = (variableMaps: VariableMap[]): VariableMap[] => {
@@ -32,6 +42,19 @@ const dedupeVariableMaps = (variableMaps: VariableMap[]): VariableMap[] => {
     deduped.set(JSON.stringify(variableMap), variableMap)
   }
   return [...deduped.values()]
+}
+
+const compileMatcher = (pattern: string) => {
+  if (pattern.startsWith('!')) {
+    return {
+      negative: true,
+      regexp: compilePattern(pattern.slice(1)),
+    }
+  }
+  return {
+    negative: false,
+    regexp: compilePattern(pattern),
+  }
 }
 
 const compilePattern = (pattern: string): RegExp => {
