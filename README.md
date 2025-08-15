@@ -25,7 +25,9 @@ For example,
 If a monorepo has many modules, it takes a long time to process all modules.
 You can reduce the number of modules to process by this action.
 
-### Feature: Path variable expansion
+## Features
+
+### Path variable expansion
 
 This action expands path patterns by changed files in a pull request.
 
@@ -87,14 +89,14 @@ If any changed files did not match the patterns, the output value is empty.
 
 This feature reduces a number of modules to process in a workflow.
 
-### Feature: Wildcard fallback
+### Fallback
 
-This action may fallback to generate wildcard patterns when the following cases:
+This action falls back for the following cases:
 
-- Any pattern in `paths-fallback` matched
+- Any pattern in `paths-fallback` is matched
 - Pull request contains more than 1,000 changed files
 
-For example, if the following path patterns are given,
+Here is an example workflow.
 
 ```yaml
 paths: |
@@ -105,19 +107,14 @@ outputs: |
   kustomization=:service/manifest/kustomization.yaml
 ```
 
-and the following file is changed in a pull request,
-
-```
-conftest/policy/foo.rego
-```
-
-this action replaces all path variables with wildcard `*` as follows:
+If `conftest/policy/foo.rego` is changed in a pull request, this action falls back to wildcard patterns.
+It replaces all path variables with wildcard `*` as follows:
 
 ```
 */manifest/kustomization.yaml
 ```
 
-This allows inspection of all modules if a specific file such as a common policy is changed.
+If `fallback-method` is set to `working-directory`, it matches against the working directory files.
 
 ## Examples
 
