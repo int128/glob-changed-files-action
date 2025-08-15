@@ -55,7 +55,7 @@ jobs:
             :dir/**
           paths-fallback: |
             .github/workflows/**
-          fallback-method: working-directory
+          fallback-method: match-working-directory
           outputs: |
             dir=:dir
           outputs-encoding: json

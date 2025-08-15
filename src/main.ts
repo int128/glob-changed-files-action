@@ -46,14 +46,14 @@ const parseOutputsEncoding = (encoding: string): 'multiline' | 'json' => {
   throw new Error(`outputs-encoding must be either 'multiline' or 'json'`)
 }
 
-const parseFallbackMethod = (method: string): 'wildcard' | 'working-directory' => {
+const parseFallbackMethod = (method: string): 'wildcard' | 'match-working-directory' => {
   if (method === 'wildcard') {
     return 'wildcard'
   }
-  if (method === 'working-directory') {
-    return 'working-directory'
+  if (method === 'match-working-directory') {
+    return 'match-working-directory'
   }
-  throw new Error(`fallback-method must be either 'wildcard' or 'working-directory'`)
+  throw new Error(`fallback-method must be either 'wildcard' or 'match-working-directory'`)
 }
 
 main().catch((e: Error) => {

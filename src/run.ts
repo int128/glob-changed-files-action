@@ -7,7 +7,7 @@ import { Octokit } from '@octokit/action'
 type Inputs = {
   paths: string[]
   pathsFallback: string[]
-  fallbackMethod: 'wildcard' | 'working-directory'
+  fallbackMethod: 'wildcard' | 'match-working-directory'
   outputsMap: Map<string, string>
   outputsEncoding: 'multiline' | 'json'
 }
