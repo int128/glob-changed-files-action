@@ -7,6 +7,7 @@ const main = async (): Promise<void> => {
     {
       paths: core.getMultilineInput('paths', { required: true }),
       pathsFallback: core.getMultilineInput('paths-fallback'),
+      fallbackMethod: parseFallbackMethod(core.getInput('fallback-method', { required: true })),
       outputsMap: parseOutputs(core.getMultilineInput('outputs', { required: true })),
       outputsEncoding: parseOutputsEncoding(core.getInput('outputs-encoding', { required: true })),
     },
@@ -43,6 +44,16 @@ const parseOutputsEncoding = (encoding: string): 'multiline' | 'json' => {
     return 'json'
   }
   throw new Error(`outputs-encoding must be either 'multiline' or 'json'`)
+}
+
+const parseFallbackMethod = (method: string): 'wildcard' | 'working-directory' => {
+  if (method === 'wildcard') {
+    return 'wildcard'
+  }
+  if (method === 'working-directory') {
+    return 'working-directory'
+  }
+  throw new Error(`fallback-method must be either 'wildcard' or 'working-directory'`)
 }
 
 main().catch((e: Error) => {

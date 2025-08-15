@@ -184,6 +184,7 @@ Otherwise, it falls back to wildcard patterns.
 | ------------------ | -------------- | ------------------------------------------------------------ |
 | `paths`            | (required)     | Glob patterns (multiline)                                    |
 | `paths-fallback`   | -              | Glob patterns to fallback to wildcard (multiline)            |
+| `fallback-method`  | `wildcard`     | Fallback method, either `wildcard` or `working-directory`    |
 | `outputs`          | (required)     | Paths to set into outputs in form of `NAME=PATH` (multiline) |
 | `outputs-encoding` | `multiline`    | Encoding of outputs, either `multiline` or `json`            |
 | `token`            | `github.token` | GitHub token to list the changed files                       |

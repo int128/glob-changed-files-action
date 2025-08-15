@@ -7,6 +7,10 @@ inputs:
   paths-fallback:
     description: Glob patterns to fallback to wildcard (multiline)
     required: false
+  fallback-method:
+    description: Fallback method, either wildcard or working-directory
+    required: true
+    default: wildcard
   outputs:
     description: Paths to set into outputs in form of NAME=PATH (multiline)
     required: true
