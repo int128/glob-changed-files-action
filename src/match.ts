@@ -1,5 +1,10 @@
 export type VariableMap = Record<string, string>
 
+export type Match = {
+  paths: string[]
+  variableMaps: VariableMap[]
+}
+
 export const matchAny = (patterns: string[], changedFiles: string[]): boolean => {
   const matchers = patterns.map(compileMatcher)
   return changedFiles.some((changedFile) => {
@@ -15,25 +20,39 @@ export const matchAny = (patterns: string[], changedFiles: string[]): boolean =>
   })
 }
 
-export const matchGroups = (patterns: string[], changedFiles: string[]): VariableMap[] => {
+export const matchGroups = (patterns: string[], changedFiles: string[]): Match => {
   const matchers = patterns.map(compileMatcher)
-  const allVariableMaps = changedFiles.flatMap((changedFile) => {
-    let variableMaps = []
+
+  const allPaths: string[] = []
+  const allVariableMaps: VariableMap[] = []
+  for (const changedFile of changedFiles) {
+    let fileMatched = false
+    let fileVariableMaps: VariableMap[] = []
     for (const matcher of matchers) {
       if (matcher.negative) {
         if (matcher.regexp.test(changedFile)) {
-          variableMaps = []
+          fileMatched = false
+          fileVariableMaps = []
         }
         continue
       }
       const matched = matcher.regexp.exec(changedFile)
+      if (matched) {
+        fileMatched = true
+      }
       if (matched?.groups !== undefined) {
-        variableMaps.push(matched.groups)
+        fileVariableMaps.push(matched.groups)
       }
     }
-    return variableMaps
-  })
-  return dedupeVariableMaps(allVariableMaps)
+    if (fileMatched) {
+      allPaths.push(changedFile)
+    }
+    allVariableMaps.push(...fileVariableMaps)
+  }
+  return {
+    paths: allPaths,
+    variableMaps: dedupeVariableMaps(allVariableMaps),
+  }
 }
 
 const dedupeVariableMaps = (variableMaps: VariableMap[]): VariableMap[] => {

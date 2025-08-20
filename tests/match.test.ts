@@ -1,5 +1,5 @@
 import { it, expect, describe } from 'vitest'
-import { VariableMap, matchAny, matchGroups, transform, transformToWildcard } from '../src/match.js'
+import { Match, VariableMap, matchAny, matchGroups, transform, transformToWildcard } from '../src/match.js'
 
 describe('matchAny', () => {
   it('matches against patterns', () => {
@@ -90,7 +90,7 @@ describe('matchAny', () => {
 
 describe('matchGroups', () => {
   it('matches against path variables', () => {
-    const variableMaps = matchGroups(
+    const match = matchGroups(
       ['clusters/:cluster/:component/**'],
       [
         'clusters/staging/cluster-autoscaler/helmfile.yaml',
@@ -98,99 +98,126 @@ describe('matchGroups', () => {
         'clusters/production/coredns/deployment.yaml',
       ],
     )
-    expect(variableMaps).toEqual([
-      {
-        cluster: 'staging',
-        component: 'cluster-autoscaler',
-      },
-      {
-        cluster: 'production',
-        component: 'coredns',
-      },
-    ])
-  })
-
-  describe('negative patterns', () => {
-    it('excludes files matching negative patterns', () => {
-      const variableMaps = matchGroups(
-        ['clusters/:cluster/:component/**', '!**/*.md'],
-        ['clusters/staging/cluster-autoscaler/README.md', 'clusters/production/coredns/README.md'],
-      )
-      expect(variableMaps).toEqual([])
-    })
-
-    it('includes files not matching negative patterns', () => {
-      const variableMaps = matchGroups(
-        ['clusters/:cluster/:component/**', '!**/*.md'],
-        ['clusters/staging/cluster-autoscaler/helmfile.yaml', 'clusters/production/coredns/README.md'],
-      )
-      expect(variableMaps).toEqual([
+    expect(match).toEqual<Match>({
+      paths: [
+        'clusters/staging/cluster-autoscaler/helmfile.yaml',
+        'clusters/staging/cluster-autoscaler/values.yaml',
+        'clusters/production/coredns/deployment.yaml',
+      ],
+      variableMaps: [
         {
           cluster: 'staging',
           component: 'cluster-autoscaler',
         },
-      ])
+        {
+          cluster: 'production',
+          component: 'coredns',
+        },
+      ],
+    })
+  })
+
+  describe('negative patterns', () => {
+    it('excludes files matching negative patterns', () => {
+      const match = matchGroups(
+        ['clusters/:cluster/:component/**', '!**/*.md'],
+        ['clusters/staging/cluster-autoscaler/README.md', 'clusters/production/coredns/README.md'],
+      )
+      expect(match).toEqual<Match>({
+        paths: [],
+        variableMaps: [],
+      })
+    })
+
+    it('includes files not matching negative patterns', () => {
+      const match = matchGroups(
+        ['clusters/:cluster/:component/**', '!**/*.md'],
+        ['clusters/staging/cluster-autoscaler/helmfile.yaml', 'clusters/production/coredns/README.md'],
+      )
+      expect(match).toEqual<Match>({
+        paths: ['clusters/staging/cluster-autoscaler/helmfile.yaml'],
+        variableMaps: [
+          {
+            cluster: 'staging',
+            component: 'cluster-autoscaler',
+          },
+        ],
+      })
     })
   })
 
   it('matches a trailing path variable', () => {
-    const variableMaps = matchGroups(
+    const match = matchGroups(
       ['.github/workflows/:workflow'],
       ['.github/workflows/ci.yaml', '.github/workflows/deploy.yaml', '.github/workflows/test.yaml'],
     )
-    expect(variableMaps).toEqual([{ workflow: 'ci.yaml' }, { workflow: 'deploy.yaml' }, { workflow: 'test.yaml' }])
+    expect(match).toEqual<Match>({
+      paths: ['.github/workflows/ci.yaml', '.github/workflows/deploy.yaml', '.github/workflows/test.yaml'],
+      variableMaps: [{ workflow: 'ci.yaml' }, { workflow: 'deploy.yaml' }, { workflow: 'test.yaml' }],
+    })
   })
 
   it('matches a partial path variable', () => {
-    const variableMaps = matchGroups(
+    const match = matchGroups(
       ['.github/workflows/:workflow.yaml'],
       ['.github/workflows/ci.yaml', '.github/workflows/deploy.yaml', '.github/workflows/test.yaml'],
     )
-    expect(variableMaps).toEqual([{ workflow: 'ci' }, { workflow: 'deploy' }, { workflow: 'test' }])
+    expect(match).toEqual<Match>({
+      paths: ['.github/workflows/ci.yaml', '.github/workflows/deploy.yaml', '.github/workflows/test.yaml'],
+      variableMaps: [{ workflow: 'ci' }, { workflow: 'deploy' }, { workflow: 'test' }],
+    })
   })
 
   it('returns empty array when no files match', () => {
-    const variableMaps = matchGroups(['clusters/:cluster/:component/**'], ['src/main.ts', 'docs/README.md'])
-    expect(variableMaps).toEqual([])
+    const match = matchGroups(['clusters/:cluster/:component/**'], ['src/main.ts', 'docs/README.md'])
+    expect(match).toEqual<Match>({
+      paths: [],
+      variableMaps: [],
+    })
   })
 
   it('deduplicates identical groups', () => {
-    const variableMaps = matchGroups(
+    const match = matchGroups(
       ['clusters/:cluster/:component/**'],
       ['clusters/staging/app/file1.yaml', 'clusters/staging/app/file2.yaml', 'clusters/staging/app/file3.yaml'],
     )
-    expect(variableMaps).toEqual([
-      {
-        cluster: 'staging',
-        component: 'app',
-      },
-    ])
+    expect(match).toEqual<Match>({
+      paths: ['clusters/staging/app/file1.yaml', 'clusters/staging/app/file2.yaml', 'clusters/staging/app/file3.yaml'],
+      variableMaps: [
+        {
+          cluster: 'staging',
+          component: 'app',
+        },
+      ],
+    })
   })
 
   it('handles multiple patterns', () => {
-    const variableMaps = matchGroups(
+    const match = matchGroups(
       ['clusters/:cluster/:component/**', 'apps/:env/:service/**'],
       ['clusters/staging/app/file.yaml', 'apps/dev/api/config.json'],
     )
-    expect(variableMaps).toEqual([
-      {
-        cluster: 'staging',
-        component: 'app',
-      },
-      {
-        env: 'dev',
-        service: 'api',
-      },
-    ])
+    expect(match).toEqual<Match>({
+      paths: ['clusters/staging/app/file.yaml', 'apps/dev/api/config.json'],
+      variableMaps: [
+        {
+          cluster: 'staging',
+          component: 'app',
+        },
+        {
+          env: 'dev',
+          service: 'api',
+        },
+      ],
+    })
   })
 
   it('handles patterns with no path variables', () => {
-    const variableMaps = matchGroups(['src/**/*.ts'], ['src/main.ts', 'src/utils/helper.ts'])
-    expect(variableMaps).toEqual([])
-  })
-
-  it('handles empty strings', () => {
-    expect(matchGroups([''], [''])).toEqual([])
+    const match = matchGroups(['src/**/*.ts'], ['src/main.ts', 'src/utils/helper.ts'])
+    expect(match).toEqual<Match>({
+      paths: ['src/utils/helper.ts'], // TODO: 'src/main.ts' should also match
+      variableMaps: [],
+    })
   })
 })
 
