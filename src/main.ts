@@ -9,7 +9,7 @@ const main = async (): Promise<void> => {
       pathsFallback: core.getMultilineInput('paths-fallback'),
       fallbackMethod: parseFallbackMethod(core.getInput('fallback-method', { required: true })),
       transform: core.getMultilineInput('transform'),
-      outputsMap: parseOutputs(core.getMultilineInput('outputs', { required: true })),
+      outputsMap: parseOutputs(core.getMultilineInput('outputs')),
       outputsEncoding: parseOutputsEncoding(core.getInput('outputs-encoding', { required: true })),
     },
     await getContext(),
