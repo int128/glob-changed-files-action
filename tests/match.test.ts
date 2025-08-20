@@ -219,6 +219,139 @@ describe('matchGroups', () => {
       variableMaps: [],
     })
   })
+
+  it('handles single asterisk wildcard', () => {
+    const match = matchGroups(['src/*/index.ts'], ['src/components/index.ts', 'src/utils/index.ts'])
+    expect(match).toEqual<Match>({
+      paths: ['src/components/index.ts', 'src/utils/index.ts'],
+      variableMaps: [],
+    })
+  })
+
+  it('handles double asterisk wildcard', () => {
+    const match = matchGroups(
+      ['src/**/*.test.ts'],
+      ['src/components/Button/Button.test.ts', 'src/utils/helpers.test.ts'],
+    )
+    expect(match).toEqual<Match>({
+      paths: ['src/components/Button/Button.test.ts', 'src/utils/helpers.test.ts'],
+      variableMaps: [],
+    })
+  })
+
+  it('returns empty result for empty file list', () => {
+    const match = matchGroups(['clusters/:cluster/:component/**'], [])
+    expect(match).toEqual<Match>({
+      paths: [],
+      variableMaps: [],
+    })
+  })
+
+  it('returns empty result for empty pattern list', () => {
+    const match = matchGroups([], ['clusters/staging/app/file.yaml'])
+    expect(match).toEqual<Match>({
+      paths: [],
+      variableMaps: [],
+    })
+  })
+
+  it('handles empty strings', () => {
+    const match = matchGroups([''], [''])
+    expect(match).toEqual<Match>({
+      paths: [''],
+      variableMaps: [],
+    })
+  })
+
+  it('handles special characters in file paths', () => {
+    const match = matchGroups(['files/:name/**'], ['files/my-app_v1.2.3/config.json'])
+    expect(match).toEqual<Match>({
+      paths: ['files/my-app_v1.2.3/config.json'],
+      variableMaps: [
+        {
+          name: 'my-app_v1.2.3',
+        },
+      ],
+    })
+  })
+
+  it('handles case sensitivity', () => {
+    const match = matchGroups(['Apps/:app/**'], ['apps/myapp/file.txt'])
+    expect(match).toEqual<Match>({
+      paths: [],
+      variableMaps: [],
+    })
+  })
+
+  it('handles deep nesting with double asterisk', () => {
+    const match = matchGroups(['src/**'], ['src/very/deep/nested/folder/structure/file.ts'])
+    expect(match).toEqual<Match>({
+      paths: ['src/very/deep/nested/folder/structure/file.ts'],
+      variableMaps: [],
+    })
+  })
+
+  it('validates exact pattern matching without false positives', () => {
+    const match = matchGroups(
+      ['clusters/:cluster/:component/file.yaml'],
+      ['clusters/staging/app/extra/file.yaml'], // extra folder should not match
+    )
+    expect(match).toEqual<Match>({
+      paths: [],
+      variableMaps: [],
+    })
+  })
+
+  it('handles single asterisk wildcard with path variables', () => {
+    const match = matchGroups(
+      ['src/:module/*/index.ts'],
+      ['src/components/Button/index.ts', 'src/utils/helpers/index.ts'],
+    )
+    expect(match).toEqual<Match>({
+      paths: ['src/components/Button/index.ts', 'src/utils/helpers/index.ts'],
+      variableMaps: [
+        {
+          module: 'components',
+        },
+        {
+          module: 'utils',
+        },
+      ],
+    })
+  })
+
+  it('handles path variables with special characters', () => {
+    const match = matchGroups(['apps/:env/:service/**'], ['apps/staging-env/api_service/config.json'])
+    expect(match).toEqual<Match>({
+      paths: ['apps/staging-env/api_service/config.json'],
+      variableMaps: [
+        {
+          env: 'staging-env',
+          service: 'api_service',
+        },
+      ],
+    })
+  })
+
+  it('handles mixed wildcards and path variables', () => {
+    const match = matchGroups(
+      ['projects/:project/*/src/**/:component.ts'],
+      ['projects/webapp/frontend/src/components/Button.ts', 'projects/api/backend/src/utils/helper.ts'],
+    )
+    expect(match).toEqual<Match>({
+      paths: ['projects/webapp/frontend/src/components/Button.ts', 'projects/api/backend/src/utils/helper.ts'],
+      variableMaps: [
+        {
+          project: 'webapp',
+          component: 'Button',
+        },
+        {
+          project: 'api',
+          component: 'helper',
+        },
+      ],
+    })
+  })
 })
 
 describe('transform', () => {
