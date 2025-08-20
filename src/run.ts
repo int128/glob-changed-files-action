@@ -67,11 +67,11 @@ const matchChangedFiles = async (inputs: Inputs, context: Context, octokit: Octo
     return await fallback(inputs)
   }
 
-  const groups = match.matchGroups(inputs.paths, changedFiles)
+  const { variableMaps } = match.matchGroups(inputs.paths, changedFiles)
   core.info(`Transform paths by the changed files`)
   const variableMap = new Map<string, string[]>()
   for (const [key, pattern] of inputs.outputsMap) {
-    const paths = match.transform(pattern, groups)
+    const paths = match.transform(pattern, variableMaps)
     variableMap.set(key, paths)
   }
   return variableMap
@@ -91,11 +91,11 @@ const matchWorkingDirectory = async (inputs: Inputs): Promise<VariableMap> => {
   core.endGroup()
 
   core.info(`Working directory files: ${workingDirectoryFiles.length} files`)
-  const groups = match.matchGroups(inputs.paths, workingDirectoryFiles)
+  const { variableMaps } = match.matchGroups(inputs.paths, workingDirectoryFiles)
   core.info(`Transform paths by the working directory files`)
   const variableMap = new Map<string, string[]>()
   for (const [key, pattern] of inputs.outputsMap) {
-    const paths = match.transform(pattern, groups)
+    const paths = match.transform(pattern, variableMaps)
     variableMap.set(key, paths)
   }
   return variableMap
