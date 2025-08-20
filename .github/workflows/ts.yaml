@@ -37,19 +37,19 @@ jobs:
 
       - uses: ./
         name: Run int128/glob-changed-files-action
-        id: glob-changed-files
+        id: deprecated-glob-changed-files
         with:
           paths: |
             :dir/**
           outputs: |
             dir=:dir
-      - run: echo "$DIR"
+      - run: test "$DIR"
         env:
-          DIR: ${{ steps.glob-changed-files.outputs.dir }}
+          DIR: ${{ steps.deprecated-glob-changed-files.outputs.dir }}
 
       - uses: ./
         name: Run int128/glob-changed-files-action
-        id: glob-changed-files-json
+        id: deprecated-glob-changed-files-json
         with:
           paths: |
             :dir/**
@@ -61,7 +61,32 @@ jobs:
           outputs-encoding: json
       - run: jq . <<< "$DIR"
         env:
-          DIR: ${{ steps.glob-changed-files-json.outputs.dir }}
+          DIR: ${{ steps.deprecated-glob-changed-files-json.outputs.dir }}
+
+      - uses: ./
+        name: Run int128/glob-changed-files-action
+        id: glob-changed-files
+        with:
+          paths: |
+            :dir/**
+          transform: |
+            :dir
+      - run: test "$PATHS"
+        env:
+          PATHS: ${{ steps.glob-changed-files.outputs.paths }}
+
+      - uses: ./
+        name: Run int128/glob-changed-files-action
+        id: glob-changed-files-json
+        with:
+          paths: |
+            :dir/**
+          paths-fallback: |
+            .github/workflows/**
+          fallback-method: match-working-directory
+      - run: jq . <<< "$PATHS"
+        env:
+          PATHS: ${{ steps.glob-changed-files-json.outputs.paths-json }}
 
   generate:
     runs-on: ubuntu-latest
