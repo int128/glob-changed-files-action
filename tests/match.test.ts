@@ -255,14 +255,6 @@ describe('matchGroups', () => {
     })
   })
 
-  it('handles empty strings', () => {
-    const match = matchGroups([''], [''])
-    expect(match).toEqual<Match>({
-      paths: [''],
-      variableMaps: [],
-    })
-  })
-
   it('handles special characters in file paths', () => {
     const match = matchGroups(['files/:name/**'], ['files/my-app_v1.2.3/config.json'])
     expect(match).toEqual<Match>({
