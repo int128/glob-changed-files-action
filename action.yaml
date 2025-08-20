@@ -11,6 +11,9 @@ inputs:
     description: Fallback method, either wildcard or match-working-directory
     required: true
     default: wildcard
+  transform:
+    description: Paths to transform (multiline)
+    required: false
   outputs:
     description: Paths to set into outputs in form of NAME=PATH (multiline)
     required: true

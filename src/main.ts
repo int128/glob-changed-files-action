@@ -8,6 +8,7 @@ const main = async (): Promise<void> => {
       paths: core.getMultilineInput('paths', { required: true }),
       pathsFallback: core.getMultilineInput('paths-fallback'),
       fallbackMethod: parseFallbackMethod(core.getInput('fallback-method', { required: true })),
+      transform: core.getMultilineInput('transform'),
       outputsMap: parseOutputs(core.getMultilineInput('outputs', { required: true })),
       outputsEncoding: parseOutputsEncoding(core.getInput('outputs-encoding', { required: true })),
     },
