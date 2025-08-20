@@ -21,6 +21,8 @@ const main = async (): Promise<void> => {
     core.info(v)
     core.endGroup()
   }
+  core.setOutput('paths', outputs.paths.join('\n'))
+  core.setOutput('paths-json', outputs.paths)
 }
 
 const parseOutputs = (outputs: string[]): Map<string, string> => {

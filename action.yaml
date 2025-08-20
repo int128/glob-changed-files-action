@@ -25,6 +25,11 @@ inputs:
     description: GitHub token to list the changed files
     required: true
     default: ${{ github.token }}
+outputs:
+  paths:
+    description: List of the changed files (multiline)
+  paths-json:
+    description: List of the changed files (JSON)
 runs:
   using: 'node20'
   main: 'dist/index.js'

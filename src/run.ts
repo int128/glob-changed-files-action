@@ -22,20 +22,6 @@ export const run = async (inputs: Inputs, context: Context, octokit: Octokit): P
   core.info(`eventName: ${context.eventName}`)
   core.info(`outputs: ${JSON.stringify([...inputs.outputsMap], undefined, 2)}`)
 
-  const variableMap = await matchChangedFiles(inputs, context, octokit)
-
-  const map = new Map<string, string>()
-  for (const [key, paths] of variableMap) {
-    if (inputs.outputsEncoding === 'json') {
-      map.set(key, JSON.stringify(paths))
-    } else {
-      map.set(key, paths.join('\n'))
-    }
-  }
-  return { map }
-}
-
-const matchChangedFiles = async (inputs: Inputs, context: Context, octokit: Octokit): Promise<Outputs> => {
   if (!('pull_request' in context.payload && 'number' in context.payload)) {
     core.info(`Fallback due to not pull_request event`)
     return await fallback(inputs)
@@ -67,23 +53,29 @@ const matchChangedFiles = async (inputs: Inputs, context: Context, octokit: Octo
     return await fallback(inputs)
   }
 
-  const { variableMaps } = match.matchGroups(inputs.paths, changedFiles)
+  const matchResult = match.matchGroups(inputs.paths, changedFiles)
 
-  const transformedPaths = inputs.transform.flatMap((pattern) => match.transform(pattern, variableMaps))
   const transformedMap = new Map<string, string[]>()
   for (const [key, pattern] of inputs.outputsMap) {
-    const paths = match.transform(pattern, variableMaps)
+    const paths = match.transform(pattern, matchResult.variableMaps)
     transformedMap.set(key, paths)
   }
+  if (inputs.transform.length > 0) {
+    const transformedPaths = inputs.transform.flatMap((pattern) => match.transform(pattern, matchResult.variableMaps))
+    return {
+      paths: transformedPaths,
+      map: encodeOutputMap(transformedMap, inputs.outputsEncoding),
+    }
+  }
   return {
-    paths: transformedPaths,
-    map: transformedMap,
+    paths: matchResult.paths,
+    map: encodeOutputMap(transformedMap, inputs.outputsEncoding),
   }
 }
 
 const fallback = async (inputs: Inputs): Promise<Outputs> => {
   if (inputs.fallbackMethod === 'wildcard') {
-    return fallbackToWildcard(inputs.outputsMap)
+    return fallbackToWildcard(inputs)
   }
   return await matchWorkingDirectory(inputs)
 }
@@ -95,21 +87,53 @@ const matchWorkingDirectory = async (inputs: Inputs): Promise<Outputs> => {
   core.endGroup()
 
   core.info(`Working directory files: ${workingDirectoryFiles.length} files`)
-  const { variableMaps } = match.matchGroups(inputs.paths, workingDirectoryFiles)
-  core.info(`Transform paths by the working directory files`)
-  const variableMap = new Map<string, string[]>()
+  const matchResult = match.matchGroups(inputs.paths, workingDirectoryFiles)
+
+  const transformedMap = new Map<string, string[]>()
   for (const [key, pattern] of inputs.outputsMap) {
-    const paths = match.transform(pattern, variableMaps)
-    variableMap.set(key, paths)
+    const paths = match.transform(pattern, matchResult.variableMaps)
+    transformedMap.set(key, paths)
   }
-  return variableMap
+  if (inputs.transform.length > 0) {
+    const transformedPaths = inputs.transform.flatMap((pattern) => match.transform(pattern, matchResult.variableMaps))
+    return {
+      paths: transformedPaths,
+      map: encodeOutputMap(transformedMap, inputs.outputsEncoding),
+    }
+  }
+  return {
+    paths: matchResult.paths,
+    map: encodeOutputMap(transformedMap, inputs.outputsEncoding),
+  }
 }
 
-const fallbackToWildcard = (outputsMap: Map<string, string>): Outputs => {
-  const variableMap = new Map<string, string[]>()
-  for (const [key, pattern] of outputsMap) {
+const fallbackToWildcard = (inputs: Inputs): Outputs => {
+  const transformedMap = new Map<string, string[]>()
+  for (const [key, pattern] of inputs.outputsMap) {
     const paths = match.transformToWildcard(pattern)
-    variableMap.set(key, paths)
+    transformedMap.set(key, paths)
   }
-  return variableMap
+  if (inputs.transform.length > 0) {
+    const transformedPaths = inputs.transform.flatMap((pattern) => match.transformToWildcard(pattern))
+    return {
+      paths: transformedPaths,
+      map: encodeOutputMap(transformedMap, inputs.outputsEncoding),
+    }
+  }
+  return {
+    paths: [],
+    map: encodeOutputMap(transformedMap, inputs.outputsEncoding),
+  }
+}
+
+const encodeOutputMap = (map: Map<string, string[]>, encoding: 'multiline' | 'json'): Map<string, string> => {
+  const encodedMap = new Map<string, string>()
+  for (const [key, value] of map) {
+    if (encoding === 'json') {
+      encodedMap.set(key, JSON.stringify(value))
+    } else {
+      encodedMap.set(key, value.join('\n'))
+    }
+  }
+  return encodedMap
 }
