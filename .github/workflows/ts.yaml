@@ -37,34 +37,6 @@ jobs:
 
       - uses: ./
         name: Run int128/glob-changed-files-action
-        id: deprecated-glob-changed-files
-        with:
-          paths: |
-            :dir/**
-          outputs: |
-            dir=:dir
-      - run: test "$DIR"
-        env:
-          DIR: ${{ steps.deprecated-glob-changed-files.outputs.dir }}
-
-      - uses: ./
-        name: Run int128/glob-changed-files-action
-        id: deprecated-glob-changed-files-json
-        with:
-          paths: |
-            :dir/**
-          paths-fallback: |
-            .github/workflows/**
-          fallback-method: match-working-directory
-          outputs: |
-            dir=:dir
-          outputs-encoding: json
-      - run: jq . <<< "$DIR"
-        env:
-          DIR: ${{ steps.deprecated-glob-changed-files-json.outputs.dir }}
-
-      - uses: ./
-        name: Run int128/glob-changed-files-action
         id: glob-changed-files
         with:
           paths: |

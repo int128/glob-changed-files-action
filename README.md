@@ -107,14 +107,7 @@ transform: |
   :service/manifest/kustomization.yaml
 ```
 
-If `conftest/policy/foo.rego` is changed in a pull request, this action falls back to wildcard patterns.
-It replaces all path variables with wildcard `*` as follows:
-
-```
-*/manifest/kustomization.yaml
-```
-
-If `fallback-method` is set to `match-working-directory`, it matches against the working directory files.
+If `conftest/policy/foo.rego` is changed in a pull request, this action matches against the working directory files.
 
 ## Examples
 
@@ -177,15 +170,12 @@ Otherwise, it falls back to wildcard patterns.
 
 ### Inputs
 
-| Name               | Default        | Description                                                     |
-| ------------------ | -------------- | --------------------------------------------------------------- |
-| `paths`            | (required)     | Glob patterns (multiline)                                       |
-| `paths-fallback`   | -              | Glob patterns to fallback to wildcard (multiline)               |
-| `fallback-method`  | `wildcard`     | Fallback method, either `wildcard` or `match-working-directory` |
-| `transform`        | -              | Paths to transform (multiline)                                  |
-| `outputs`          | (required)     | Paths to set into outputs in form of `NAME=PATH` (multiline)    |
-| `outputs-encoding` | `multiline`    | Encoding of outputs, either `multiline` or `json`               |
-| `token`            | `github.token` | GitHub token to list the changed files                          |
+| Name             | Default        | Description                                       |
+| ---------------- | -------------- | ------------------------------------------------- |
+| `paths`          | (required)     | Glob patterns (multiline)                         |
+| `paths-fallback` | -              | Glob patterns to fallback to wildcard (multiline) |
+| `transform`      | -              | Paths to transform (multiline)                    |
+| `token`          | `github.token` | GitHub token to list the changed files            |
 
 ### Outputs
 
@@ -193,5 +183,3 @@ Otherwise, it falls back to wildcard patterns.
 | ------------ | ---------------------------------------------- |
 | `paths`      | Changed file paths based on the input patterns |
 | `paths-json` | Changed file paths in JSON format              |
-
-This action sets the keys defined by `outputs` in inputs.
