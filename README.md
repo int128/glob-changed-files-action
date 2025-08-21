@@ -177,20 +177,15 @@ Otherwise, it falls back to wildcard patterns.
 
 ### Inputs
 
-| Name              | Default        | Description                                                     |
-| ----------------- | -------------- | --------------------------------------------------------------- |
-| `paths`           | (required)     | Glob patterns (multiline)                                       |
-| `paths-fallback`  | -              | Glob patterns to fallback to wildcard (multiline)               |
-| `fallback-method` | `wildcard`     | Fallback method, either `wildcard` or `match-working-directory` |
-| `transform`       | -              | Paths to transform (multiline)                                  |
-| `token`           | `github.token` | GitHub token to list the changed files                          |
-
-Deprecated:
-
-| Name               | Default     | Description                                                  |
-| ------------------ | ----------- | ------------------------------------------------------------ |
-| `outputs`          | (required)  | Paths to set into outputs in form of `NAME=PATH` (multiline) |
-| `outputs-encoding` | `multiline` | Encoding of outputs, either `multiline` or `json`            |
+| Name               | Default        | Description                                                     |
+| ------------------ | -------------- | --------------------------------------------------------------- |
+| `paths`            | (required)     | Glob patterns (multiline)                                       |
+| `paths-fallback`   | -              | Glob patterns to fallback to wildcard (multiline)               |
+| `fallback-method`  | `wildcard`     | Fallback method, either `wildcard` or `match-working-directory` |
+| `transform`        | -              | Paths to transform (multiline)                                  |
+| `outputs`          | (required)     | Paths to set into outputs in form of `NAME=PATH` (multiline)    |
+| `outputs-encoding` | `multiline`    | Encoding of outputs, either `multiline` or `json`               |
+| `token`            | `github.token` | GitHub token to list the changed files                          |
 
 ### Outputs
 
