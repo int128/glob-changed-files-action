@@ -20,22 +20,6 @@ export const run = async (inputs: Inputs, context: Context, octokit: Octokit): P
   core.info(`eventName: ${context.eventName}`)
   core.info(`outputs: ${JSON.stringify([...inputs.outputsMap], undefined, 2)}`)
 
-  const variableMap = await matchChangedFiles(inputs, context, octokit)
-
-  const map = new Map<string, string>()
-  for (const [key, paths] of variableMap) {
-    if (inputs.outputsEncoding === 'json') {
-      map.set(key, JSON.stringify(paths))
-    } else {
-      map.set(key, paths.join('\n'))
-    }
-  }
-  return { map }
-}
-
-type VariableMap = Map<string, string[]>
-
-const matchChangedFiles = async (inputs: Inputs, context: Context, octokit: Octokit): Promise<VariableMap> => {
   if (!('pull_request' in context.payload && 'number' in context.payload)) {
     core.info(`Fallback due to not pull_request event`)
     return await fallback(inputs)
@@ -69,22 +53,25 @@ const matchChangedFiles = async (inputs: Inputs, context: Context, octokit: Octo
 
   const { variableMaps } = match.matchGroups(inputs.paths, changedFiles)
   core.info(`Transform paths by the changed files`)
-  const variableMap = new Map<string, string[]>()
+  const variableMap = new Map<string, string>()
   for (const [key, pattern] of inputs.outputsMap) {
     const paths = match.transform(pattern, variableMaps)
-    variableMap.set(key, paths)
+    const variableValue = encodeVariableValues(paths, inputs.outputsEncoding)
+    variableMap.set(key, variableValue)
   }
-  return variableMap
+  return {
+    map: variableMap,
+  }
 }
 
-const fallback = async (inputs: Inputs): Promise<VariableMap> => {
+const fallback = async (inputs: Inputs): Promise<Outputs> => {
   if (inputs.fallbackMethod === 'wildcard') {
-    return fallbackToWildcard(inputs.outputsMap)
+    return fallbackToWildcard(inputs)
   }
   return await matchWorkingDirectory(inputs)
 }
 
-const matchWorkingDirectory = async (inputs: Inputs): Promise<VariableMap> => {
+const matchWorkingDirectory = async (inputs: Inputs): Promise<Outputs> => {
   core.startGroup(`git ls-files`)
   const { stdout } = await exec.getExecOutput('git', ['ls-files'])
   const workingDirectoryFiles = stdout.trim().split('\n')
@@ -93,19 +80,32 @@ const matchWorkingDirectory = async (inputs: Inputs): Promise<VariableMap> => {
   core.info(`Working directory files: ${workingDirectoryFiles.length} files`)
   const { variableMaps } = match.matchGroups(inputs.paths, workingDirectoryFiles)
   core.info(`Transform paths by the working directory files`)
-  const variableMap = new Map<string, string[]>()
+  const variableMap = new Map<string, string>()
   for (const [key, pattern] of inputs.outputsMap) {
     const paths = match.transform(pattern, variableMaps)
-    variableMap.set(key, paths)
+    const variableValue = encodeVariableValues(paths, inputs.outputsEncoding)
+    variableMap.set(key, variableValue)
   }
-  return variableMap
+  return {
+    map: variableMap,
+  }
 }
 
-const fallbackToWildcard = (outputsMap: Map<string, string>): VariableMap => {
-  const variableMap = new Map<string, string[]>()
-  for (const [key, pattern] of outputsMap) {
+const fallbackToWildcard = (inputs: Inputs): Outputs => {
+  const variableMap = new Map<string, string>()
+  for (const [key, pattern] of inputs.outputsMap) {
     const paths = match.transformToWildcard(pattern)
-    variableMap.set(key, paths)
+    const variableValue = encodeVariableValues(paths, inputs.outputsEncoding)
+    variableMap.set(key, variableValue)
   }
-  return variableMap
+  return {
+    map: variableMap,
+  }
+}
+
+const encodeVariableValues = (values: string[], encoding: 'multiline' | 'json'): string => {
+  if (encoding === 'json') {
+    return JSON.stringify(values)
+  }
+  return values.join('\n')
 }
