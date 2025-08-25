@@ -27,7 +27,7 @@ You can reduce the number of modules to process by this action.
 
 ## Features
 
-### Path variable expansion
+### Transform path variables
 
 This action expands path patterns by changed files in a pull request.
 
@@ -36,8 +36,8 @@ For example, if the following path patterns are given,
 ```yaml
 paths: |
   :service/manifest/**
-outputs: |
-  kustomization=:service/manifest/kustomization.yaml
+transform: |
+  :service/manifest/kustomization.yaml
 ```
 
 and the following file is changed in a pull request,
@@ -68,8 +68,8 @@ For example,
 ```yaml
 paths: |
   .github/workflows/:workflow.yaml
-outputs: |
-  workflow=:workflow
+transform: |
+  :workflow
 ```
 
 If a pattern is prefixed with `!`, it is treated as a negative pattern.
@@ -79,8 +79,8 @@ For example, if the following path patterns are given,
 paths: |
   clusters/:cluster/:component/**
   !**/*.md
-outputs: |
-  kustomization=clusters/:cluster/:component/kustomization.yaml
+transform: |
+  clusters/:cluster/:component/kustomization.yaml
 ```
 
 this action ignores files matching negative patterns such as `README.md`.
@@ -103,8 +103,8 @@ paths: |
   :service/manifest/**
 paths-fallback: |
   conftest/**
-outputs: |
-  kustomization=:service/manifest/kustomization.yaml
+transform: |
+  :service/manifest/kustomization.yaml
 ```
 
 If `conftest/policy/foo.rego` is changed in a pull request, this action falls back to wildcard patterns.
@@ -145,14 +145,14 @@ jobs:
         with:
           paths: |
             clusters/:cluster/:component/**
-          outputs: |
-            kustomization=clusters/:cluster/:component/kustomization.yaml
+          transform: |
+            clusters/:cluster/:component/kustomization.yaml
       - uses: int128/kustomize-action@v1
         with:
-          kustomization: ${{ steps.glob-changed-files.outputs.kustomization }}
+          kustomization: ${{ steps.glob-changed-files.outputs.paths }}
 ```
 
-This action expands paths by the following rule:
+This action transforms the paths by the following rule:
 
 ```
 clusters/:cluster/:component/**
@@ -182,10 +182,16 @@ Otherwise, it falls back to wildcard patterns.
 | `paths`            | (required)     | Glob patterns (multiline)                                       |
 | `paths-fallback`   | -              | Glob patterns to fallback to wildcard (multiline)               |
 | `fallback-method`  | `wildcard`     | Fallback method, either `wildcard` or `match-working-directory` |
+| `transform`        | -              | Paths to transform (multiline)                                  |
 | `outputs`          | (required)     | Paths to set into outputs in form of `NAME=PATH` (multiline)    |
 | `outputs-encoding` | `multiline`    | Encoding of outputs, either `multiline` or `json`               |
 | `token`            | `github.token` | GitHub token to list the changed files                          |
 
 ### Outputs
+
+| Name         | Description                                    |
+| ------------ | ---------------------------------------------- |
+| `paths`      | Changed file paths based on the input patterns |
+| `paths-json` | Changed file paths in JSON format              |
 
 This action sets the keys defined by `outputs` in inputs.

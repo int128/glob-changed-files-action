@@ -8,7 +8,8 @@ const main = async (): Promise<void> => {
       paths: core.getMultilineInput('paths', { required: true }),
       pathsFallback: core.getMultilineInput('paths-fallback'),
       fallbackMethod: parseFallbackMethod(core.getInput('fallback-method', { required: true })),
-      outputsMap: parseOutputs(core.getMultilineInput('outputs', { required: true })),
+      transform: core.getMultilineInput('transform'),
+      outputsMap: parseOutputs(core.getMultilineInput('outputs')),
       outputsEncoding: parseOutputsEncoding(core.getInput('outputs-encoding', { required: true })),
     },
     await getContext(),
@@ -20,6 +21,8 @@ const main = async (): Promise<void> => {
     core.info(v)
     core.endGroup()
   }
+  core.setOutput('paths', outputs.paths.join('\n'))
+  core.setOutput('paths-json', outputs.paths)
 }
 
 const parseOutputs = (outputs: string[]): Map<string, string> => {
