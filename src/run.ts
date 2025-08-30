@@ -60,16 +60,22 @@ export const run = async (inputs: Inputs, context: Context, octokit: Octokit): P
     const paths = match.transform(pattern, matchResult.variableMaps)
     transformedMap.set(key, paths)
   }
+  const variableMap = new Map<string, string>()
+  for (const [key, pattern] of inputs.outputsMap) {
+    const paths = match.transform(pattern, matchResult.variableMaps)
+    const variableValue = encodeVariableValues(paths, inputs.outputsEncoding)
+    variableMap.set(key, variableValue)
+  }
   if (inputs.transform.length > 0) {
     const transformedPaths = inputs.transform.flatMap((pattern) => match.transform(pattern, matchResult.variableMaps))
     return {
       paths: transformedPaths,
-      map: encodeOutputMap(transformedMap, inputs.outputsEncoding),
+      map: variableMap,
     }
   }
   return {
     paths: matchResult.paths,
-    map: encodeOutputMap(transformedMap, inputs.outputsEncoding),
+    map: variableMap,
   }
 }
 
@@ -94,16 +100,22 @@ const matchWorkingDirectory = async (inputs: Inputs): Promise<Outputs> => {
     const paths = match.transform(pattern, matchResult.variableMaps)
     transformedMap.set(key, paths)
   }
+  const variableMap = new Map<string, string>()
+  for (const [key, pattern] of inputs.outputsMap) {
+    const paths = match.transform(pattern, matchResult.variableMaps)
+    const variableValue = encodeVariableValues(paths, inputs.outputsEncoding)
+    variableMap.set(key, variableValue)
+  }
   if (inputs.transform.length > 0) {
     const transformedPaths = inputs.transform.flatMap((pattern) => match.transform(pattern, matchResult.variableMaps))
     return {
       paths: transformedPaths,
-      map: encodeOutputMap(transformedMap, inputs.outputsEncoding),
+      map: variableMap,
     }
   }
   return {
     paths: matchResult.paths,
-    map: encodeOutputMap(transformedMap, inputs.outputsEncoding),
+    map: variableMap,
   }
 }
 
@@ -113,27 +125,28 @@ const fallbackToWildcard = (inputs: Inputs): Outputs => {
     const paths = match.transformToWildcard(pattern)
     transformedMap.set(key, paths)
   }
+  const variableMap = new Map<string, string>()
+  for (const [key, pattern] of inputs.outputsMap) {
+    const paths = match.transformToWildcard(pattern)
+    const variableValue = encodeVariableValues(paths, inputs.outputsEncoding)
+    variableMap.set(key, variableValue)
+  }
   if (inputs.transform.length > 0) {
     const transformedPaths = inputs.transform.flatMap((pattern) => match.transformToWildcard(pattern))
     return {
       paths: transformedPaths,
-      map: encodeOutputMap(transformedMap, inputs.outputsEncoding),
+      map: variableMap,
     }
   }
   return {
     paths: [],
-    map: encodeOutputMap(transformedMap, inputs.outputsEncoding),
+    map: variableMap,
   }
 }
 
-const encodeOutputMap = (map: Map<string, string[]>, encoding: 'multiline' | 'json'): Map<string, string> => {
-  const encodedMap = new Map<string, string>()
-  for (const [key, value] of map) {
-    if (encoding === 'json') {
-      encodedMap.set(key, JSON.stringify(value))
-    } else {
-      encodedMap.set(key, value.join('\n'))
-    }
+const encodeVariableValues = (values: string[], encoding: 'multiline' | 'json'): string => {
+  if (encoding === 'json') {
+    return JSON.stringify(values)
   }
-  return encodedMap
+  return values.join('\n')
 }
