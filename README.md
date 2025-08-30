@@ -183,3 +183,39 @@ Otherwise, it matches the working directory files.
 | ------------ | ---------------------------------------------- |
 | `paths`      | Changed file paths based on the input patterns |
 | `paths-json` | Changed file paths in JSON format              |
+
+## Migration from v1 to v2
+
+The following inputs have been changed:
+
+- `outputs` has been removed. Instead, use `transform` input and `paths` output.
+- `outputs-encoding` has been removed.
+- `fallback-method` has been removed. The fallback behavior is now always to match the working directory files.
+
+Here is an example of migration from v1 to v2:
+
+```yaml
+# v1 workflow
+- uses: int128/glob-changed-files-action@v1
+  id: glob-changed-files
+  with:
+    paths: |
+      clusters/:cluster/:component/**
+    outputs: |
+      kustomization=clusters/:cluster/:component/kustomization.yaml
+- uses: int128/kustomize-action@v1
+  with:
+    kustomization: ${{ steps.glob-changed-files.outputs.kustomization }}
+
+# v2 workflow
+- uses: int128/glob-changed-files-action@v2
+  id: glob-changed-files
+  with:
+    paths: |
+      clusters/:cluster/:component/**
+    transform: |
+      clusters/:cluster/:component/kustomization.yaml
+- uses: int128/kustomize-action@v1
+  with:
+    kustomization: ${{ steps.glob-changed-files.outputs.paths }}
+```
