@@ -1,3 +1,5 @@
+import * as minimatch from 'minimatch'
+
 export type VariableMap = Record<string, string>
 
 export type Match = {
@@ -77,14 +79,12 @@ const compileMatcher = (pattern: string) => {
 }
 
 const compilePattern = (pattern: string): RegExp => {
-  const pathSegments = pattern.split('/').map((pathSegment) =>
-    pathSegment
-      .replaceAll('.', '\\.')
-      .replaceAll('**', '.+?')
-      .replaceAll('*', '[^/]+?')
-      .replaceAll(/:([a-zA-Z0-9]+)/g, '(?<$1>[^/]+?)'),
-  )
-  return new RegExp(`^${pathSegments.join('/')}$`)
+  const regexp = minimatch.makeRe(pattern, { dot: true })
+  if (regexp === false) {
+    return new RegExp(pattern)
+  }
+  const escapePathVariables = regexp.source.replaceAll(/:([a-zA-Z0-9]+)/g, '(?<$1>[^/]+)')
+  return new RegExp(escapePathVariables)
 }
 
 export const transform = (pattern: string, variableMaps: VariableMap[]): string[] => {

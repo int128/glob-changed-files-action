@@ -163,7 +163,7 @@ describe('matchGroups', () => {
     it('matches files with patterns containing no variables', () => {
       const match = matchGroups(['src/**/*.ts'], ['src/main.ts', 'src/utils/helper.ts'])
       expect(match).toEqual<Match>({
-        paths: ['src/utils/helper.ts'], // TODO: 'src/main.ts' should also match
+        paths: ['src/main.ts', 'src/utils/helper.ts'],
         variableMaps: [],
       })
     })
