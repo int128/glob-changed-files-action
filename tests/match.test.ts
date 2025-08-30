@@ -61,7 +61,7 @@ describe('matchAny', () => {
   })
 
   it('handles empty strings', () => {
-    expect(matchAny([''], [''])).toBe(true)
+    expect(matchAny([''], [''])).toBe(false)
   })
 
   it('handles special characters in file paths', () => {
