@@ -45,7 +45,7 @@ export const run = async (inputs: Inputs, context: Context, octokit: Octokit): P
   const changedFiles = listFiles.map((f) => f.filename)
   core.info(`Received a list of ${changedFiles.length} files`)
 
-  if (match.matchAny(inputs.pathsFallback, changedFiles)) {
+  if (match.matchGroups(inputs.pathsFallback, changedFiles).paths.length > 0) {
     core.info(`Fallback due to paths-fallback matches to the changed files`)
     return await fallback(inputs)
   }
