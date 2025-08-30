@@ -11,6 +11,9 @@ inputs:
     description: Fallback method, either wildcard or match-working-directory
     required: true
     default: wildcard
+  transform:
+    description: Paths to transform (multiline)
+    required: false
   outputs:
     description: Paths to set into outputs in form of NAME=PATH (multiline)
     required: true
@@ -22,6 +25,11 @@ inputs:
     description: GitHub token to list the changed files
     required: true
     default: ${{ github.token }}
+outputs:
+  paths:
+    description: List of the changed files (multiline)
+  paths-json:
+    description: List of the changed files (JSON)
 runs:
   using: 'node20'
   main: 'dist/index.js'
