@@ -55,11 +55,6 @@ export const run = async (inputs: Inputs, context: Context, octokit: Octokit): P
 
   const matchResult = match.matchGroups(inputs.paths, changedFiles)
 
-  const transformedMap = new Map<string, string[]>()
-  for (const [key, pattern] of inputs.outputsMap) {
-    const paths = match.transform(pattern, matchResult.variableMaps)
-    transformedMap.set(key, paths)
-  }
   const variableMap = new Map<string, string>()
   for (const [key, pattern] of inputs.outputsMap) {
     const paths = match.transform(pattern, matchResult.variableMaps)
@@ -95,11 +90,6 @@ const matchWorkingDirectory = async (inputs: Inputs): Promise<Outputs> => {
   core.info(`Working directory files: ${workingDirectoryFiles.length} files`)
   const matchResult = match.matchGroups(inputs.paths, workingDirectoryFiles)
 
-  const transformedMap = new Map<string, string[]>()
-  for (const [key, pattern] of inputs.outputsMap) {
-    const paths = match.transform(pattern, matchResult.variableMaps)
-    transformedMap.set(key, paths)
-  }
   const variableMap = new Map<string, string>()
   for (const [key, pattern] of inputs.outputsMap) {
     const paths = match.transform(pattern, matchResult.variableMaps)
@@ -120,11 +110,6 @@ const matchWorkingDirectory = async (inputs: Inputs): Promise<Outputs> => {
 }
 
 const fallbackToWildcard = (inputs: Inputs): Outputs => {
-  const transformedMap = new Map<string, string[]>()
-  for (const [key, pattern] of inputs.outputsMap) {
-    const paths = match.transformToWildcard(pattern)
-    transformedMap.set(key, paths)
-  }
   const variableMap = new Map<string, string>()
   for (const [key, pattern] of inputs.outputsMap) {
     const paths = match.transformToWildcard(pattern)
