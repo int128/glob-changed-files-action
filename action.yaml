@@ -16,7 +16,7 @@ inputs:
     required: false
   outputs:
     description: Paths to set into outputs in form of NAME=PATH (multiline)
-    required: true
+    required: false
   outputs-encoding:
     description: Encoding of outputs, either multiline or json
     required: true
