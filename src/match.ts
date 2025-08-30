@@ -7,21 +7,6 @@ export type Match = {
   variableMaps: VariableMap[]
 }
 
-export const matchAny = (patterns: string[], changedFiles: string[]): boolean => {
-  const matchers = compileMatchers(patterns)
-  return changedFiles.some((changedFile) => {
-    let matched = false
-    for (const matcher of matchers) {
-      if (matcher.negative) {
-        matched = matched && !matcher.regexp.test(changedFile)
-      } else {
-        matched = matched || matcher.regexp.test(changedFile)
-      }
-    }
-    return matched
-  })
-}
-
 export const matchGroups = (patterns: string[], changedFiles: string[]): Match => {
   const matchers = compileMatchers(patterns)
 
