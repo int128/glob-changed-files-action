@@ -49,6 +49,7 @@ export const run = async (inputs: Inputs, context: Context, octokit: Octokit): P
   }
 
   const matchResult = match.matchGroups(inputs.paths, changedFiles)
+  core.info(`Transform paths by the changed files`)
   if (inputs.transform.length > 0) {
     const transformedPaths = inputs.transform.flatMap((pattern) => match.transform(pattern, matchResult.variableMaps))
     return {
@@ -68,6 +69,7 @@ const matchWorkingDirectory = async (inputs: Inputs): Promise<Outputs> => {
 
   core.info(`Working directory files: ${workingDirectoryFiles.length} files`)
   const matchResult = match.matchGroups(inputs.paths, workingDirectoryFiles)
+  core.info(`Transform paths by the working directory files`)
   if (inputs.transform.length > 0) {
     const transformedPaths = inputs.transform.flatMap((pattern) => match.transform(pattern, matchResult.variableMaps))
     return {
