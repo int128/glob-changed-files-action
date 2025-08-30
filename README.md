@@ -186,11 +186,11 @@ Otherwise, it matches the working directory files.
 
 ## Migration from v1 to v2
 
-The following inputs have been changed:
+The following specifications have been changed:
 
-- `outputs` has been removed. Instead, use `transform` input and `paths` output.
-- `outputs-encoding` has been removed.
-- `fallback-method` has been removed. The fallback behavior is now always to match the working directory files.
+- `outputs` input has been removed. Instead, use `transform` input and `paths` output.
+- `outputs-encoding` input has been removed.
+- `fallback-method` input has been removed. The fallback behavior is now always to match the working directory files.
 
 Here is an example of migration from v1 to v2:
 
@@ -206,7 +206,9 @@ Here is an example of migration from v1 to v2:
 - uses: int128/kustomize-action@v1
   with:
     kustomization: ${{ steps.glob-changed-files.outputs.kustomization }}
+```
 
+```yaml
 # v2 workflow
 - uses: int128/glob-changed-files-action@v2
   id: glob-changed-files
