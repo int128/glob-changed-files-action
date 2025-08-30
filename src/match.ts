@@ -8,7 +8,7 @@ export type Match = {
 }
 
 export const matchAny = (patterns: string[], changedFiles: string[]): boolean => {
-  const matchers = patterns.map(compileMatcher)
+  const matchers = compileMatchers(patterns)
   return changedFiles.some((changedFile) => {
     let matched = false
     for (const matcher of matchers) {
@@ -23,7 +23,7 @@ export const matchAny = (patterns: string[], changedFiles: string[]): boolean =>
 }
 
 export const matchGroups = (patterns: string[], changedFiles: string[]): Match => {
-  const matchers = patterns.map(compileMatcher)
+  const matchers = compileMatchers(patterns)
 
   const allPaths: string[] = []
   const allVariableMaps: VariableMap[] = []
@@ -65,18 +65,23 @@ const dedupeVariableMaps = (variableMaps: VariableMap[]): VariableMap[] => {
   return [...deduped.values()]
 }
 
-const compileMatcher = (pattern: string) => {
-  if (pattern.startsWith('!')) {
-    return {
-      negative: true,
-      regexp: compilePattern(pattern.slice(1)),
-    }
-  }
-  return {
-    negative: false,
-    regexp: compilePattern(pattern),
-  }
-}
+const compileMatchers = (patterns: string[]) =>
+  patterns
+    .map((pattern) => pattern.trim())
+    .filter((pattern) => !pattern.startsWith('#'))
+    .filter((pattern) => pattern.length > 0)
+    .map((pattern) => {
+      if (pattern.startsWith('!')) {
+        return {
+          negative: true,
+          regexp: compilePattern(pattern.slice(1)),
+        }
+      }
+      return {
+        negative: false,
+        regexp: compilePattern(pattern),
+      }
+    })
 
 const compilePattern = (pattern: string): RegExp => {
   const regexp = minimatch.makeRe(pattern, { dot: true })
