@@ -166,16 +166,16 @@ and finally this action sets an output to `clusters/staging/cluster-autoscaler/k
 ## Specification
 
 When this action is run on a `pull_request` or `pull_request_target` event, it inspects the changed files in the pull request.
-Otherwise, it falls back to wildcard patterns.
+Otherwise, it matches the working directory files.
 
 ### Inputs
 
-| Name             | Default        | Description                                       |
-| ---------------- | -------------- | ------------------------------------------------- |
-| `paths`          | (required)     | Glob patterns (multiline)                         |
-| `paths-fallback` | -              | Glob patterns to fallback to wildcard (multiline) |
-| `transform`      | -              | Paths to transform (multiline)                    |
-| `token`          | `github.token` | GitHub token to list the changed files            |
+| Name             | Default        | Description                            |
+| ---------------- | -------------- | -------------------------------------- |
+| `paths`          | (required)     | Glob patterns (multiline)              |
+| `paths-fallback` | -              | Glob patterns to fallback (multiline)  |
+| `transform`      | -              | Paths to transform (multiline)         |
+| `token`          | `github.token` | GitHub token to list the changed files |
 
 ### Outputs
 

@@ -5,7 +5,7 @@ inputs:
     description: Glob patterns (multiline)
     required: true
   paths-fallback:
-    description: Glob patterns to fallback to wildcard (multiline)
+    description: Glob patterns to fallback (multiline)
     required: false
   transform:
     description: Paths to transform (multiline)
