@@ -16,8 +16,6 @@ type Outputs = {
 }
 
 export const run = async (inputs: Inputs, context: Context, octokit: Octokit): Promise<Outputs> => {
-  core.info(`eventName: ${context.eventName}`)
-
   if (!('pull_request' in context.payload && 'number' in context.payload)) {
     core.info(`Fallback due to not pull_request event`)
     return await matchWorkingDirectory(inputs)
