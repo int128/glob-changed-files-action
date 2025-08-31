@@ -55,6 +55,7 @@ jobs:
             :dir/**
           paths-fallback: |
             .github/workflows/**
+            src/**
           fallback-method: match-working-directory
       - run: jq . <<< "$PATHS"
         env:

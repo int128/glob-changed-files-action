@@ -1,6 +1,7 @@
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 import * as match from './match.js'
+import * as stream from 'stream'
 import { Context } from './github.js'
 import { Octokit } from '@octokit/action'
 
@@ -62,12 +63,21 @@ export const run = async (inputs: Inputs, context: Context, octokit: Octokit): P
 }
 
 const matchWorkingDirectory = async (inputs: Inputs): Promise<Outputs> => {
-  core.startGroup(`git ls-files`)
-  const { stdout } = await exec.getExecOutput('git', ['ls-files'])
-  const workingDirectoryFiles = stdout.trim().split('\n')
-  core.endGroup()
+  core.info(`Finding the working directory files`)
+  const gitLsFiles = await exec.getExecOutput('git', ['ls-files'], {
+    outStream: new stream.PassThrough(),
+    ignoreReturnCode: true,
+  })
+  if (gitLsFiles.exitCode > 0) {
+    core.warning(`Failed to list the working directory files. Empty paths will be returned`)
+    return {
+      paths: [],
+      map: new Map(),
+    }
+  }
+  const workingDirectoryFiles = gitLsFiles.stdout.trim().split('\n')
+  core.info(`Found ${workingDirectoryFiles.length} files in the working directory`)
 
-  core.info(`Working directory files: ${workingDirectoryFiles.length} files`)
   const matchResult = match.matchGroups(inputs.paths, workingDirectoryFiles)
   core.info(`Transform paths by the working directory files`)
   if (inputs.transform.length > 0) {
