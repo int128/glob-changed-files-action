@@ -56,7 +56,6 @@ jobs:
           paths-fallback: |
             .github/workflows/**
             src/**
-          fallback-method: match-working-directory
       - run: jq . <<< "$PATHS"
         env:
           PATHS: ${{ steps.glob-changed-files-json.outputs.paths-json }}
