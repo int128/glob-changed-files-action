@@ -81,7 +81,10 @@ const fallback = async (inputs: Inputs): Promise<Outputs> => {
 
 const matchWorkingDirectory = async (inputs: Inputs): Promise<Outputs> => {
   core.info(`Finding the working directory files`)
-  const gitLsFiles = await exec.getExecOutput('git', ['ls-files'], { outStream: new stream.PassThrough() })
+  const gitLsFiles = await exec.getExecOutput('git', ['ls-files'], {
+    outStream: new stream.PassThrough(),
+    ignoreReturnCode: true,
+  })
   if (gitLsFiles.exitCode > 0) {
     core.warning(`Failed to list the working directory files. Empty paths will be returned`)
     return {
