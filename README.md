@@ -184,7 +184,7 @@ Otherwise, it matches the working directory files.
 | `paths`      | Changed file paths based on the input patterns |
 | `paths-json` | Changed file paths in JSON format              |
 
-## Migration from v1 to v2
+## Migration V2
 
 The following specifications have been changed:
 

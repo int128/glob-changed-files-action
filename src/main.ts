@@ -4,8 +4,21 @@ import { getContext, getOctokit } from './github.js'
 
 const main = async (): Promise<void> => {
   if (core.getInput('outputs')) {
-    throw new Error(`outputs has been removed. See https://github.com/int128/glob-changed-files-action for migration`)
+    throw new Error(
+      `The outputs parameter has been removed. See https://github.com/int128/glob-changed-files-action#migration-v2`,
+    )
   }
+  if (core.getInput('outputs-encoding')) {
+    throw new Error(
+      `The outputs-encoding parameter has been removed. See https://github.com/int128/glob-changed-files-action#migration-v2`,
+    )
+  }
+  if (core.getInput('fallback-method')) {
+    throw new Error(
+      `The fallback-method parameter has been removed. See https://github.com/int128/glob-changed-files-action#migration-v2`,
+    )
+  }
+
   const outputs = await run(
     {
       paths: core.getMultilineInput('paths', { required: true }),
