@@ -72,7 +72,6 @@ const matchWorkingDirectory = async (inputs: Inputs): Promise<Outputs> => {
     core.warning(`Failed to list the working directory files. Empty paths will be returned`)
     return {
       paths: [],
-      map: new Map(),
     }
   }
   const workingDirectoryFiles = gitLsFiles.stdout.trim().split('\n')
