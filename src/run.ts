@@ -1,6 +1,7 @@
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 import * as match from './match.js'
+import * as stream from 'stream'
 import { Context } from './github.js'
 import { Octokit } from '@octokit/action'
 
@@ -80,7 +81,7 @@ const fallback = async (inputs: Inputs): Promise<Outputs> => {
 
 const matchWorkingDirectory = async (inputs: Inputs): Promise<Outputs> => {
   core.info(`Finding the working directory files`)
-  const gitLsFiles = await exec.getExecOutput('git', ['ls-files'], { outStream: undefined })
+  const gitLsFiles = await exec.getExecOutput('git', ['ls-files'], { outStream: new stream.PassThrough() })
   if (gitLsFiles.exitCode > 0) {
     core.warning(`Failed to list the working directory files. Empty paths will be returned`)
     return {
