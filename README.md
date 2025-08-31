@@ -192,32 +192,36 @@ The following specifications have been changed:
 - `outputs-encoding` input has been removed.
 - `fallback-method` input has been removed. The fallback behavior is now always to match the working directory files.
 
-Here is an example of migration from v1 to v2:
+### Example
+
+Before (v1):
 
 ```yaml
-# v1 workflow
-- uses: int128/glob-changed-files-action@v1
-  id: glob-changed-files
-  with:
-    paths: |
-      clusters/:cluster/:component/**
-    outputs: |
-      kustomization=clusters/:cluster/:component/kustomization.yaml
-- uses: int128/kustomize-action@v1
-  with:
-    kustomization: ${{ steps.glob-changed-files.outputs.kustomization }}
+steps:
+  - uses: int128/glob-changed-files-action@v1
+    id: glob-changed-files
+    with:
+      paths: |
+        clusters/:cluster/:component/**
+      outputs: |
+        kustomization=clusters/:cluster/:component/kustomization.yaml
+  - uses: int128/kustomize-action@v1
+    with:
+      kustomization: ${{ steps.glob-changed-files.outputs.kustomization }}
 ```
 
+After (v2):
+
 ```yaml
-# v2 workflow
-- uses: int128/glob-changed-files-action@v2
-  id: glob-changed-files
-  with:
-    paths: |
-      clusters/:cluster/:component/**
-    transform: |
-      clusters/:cluster/:component/kustomization.yaml
-- uses: int128/kustomize-action@v1
-  with:
-    kustomization: ${{ steps.glob-changed-files.outputs.paths }}
+steps:
+  - uses: int128/glob-changed-files-action@v2
+    id: glob-changed-files
+    with:
+      paths: |
+        clusters/:cluster/:component/**
+      transform: |
+        clusters/:cluster/:component/kustomization.yaml
+  - uses: int128/kustomize-action@v1
+    with:
+      kustomization: ${{ steps.glob-changed-files.outputs.paths }}
 ```
