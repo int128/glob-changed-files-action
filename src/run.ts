@@ -8,28 +8,24 @@ import { Octokit } from '@octokit/action'
 type Inputs = {
   paths: string[]
   pathsFallback: string[]
-  fallbackMethod: 'wildcard' | 'match-working-directory'
   transform: string[]
-  outputsMap: Map<string, string>
-  outputsEncoding: 'multiline' | 'json'
 }
 
 type Outputs = {
   paths: string[]
-  map: Map<string, string>
 }
 
 export const run = async (inputs: Inputs, context: Context, octokit: Octokit): Promise<Outputs> => {
   if (!('pull_request' in context.payload && 'number' in context.payload)) {
     core.info(`Fallback due to not pull_request event`)
-    return await fallback(inputs)
+    return await matchWorkingDirectory(inputs)
   }
 
   // Limit the max number of changed files to prevent GitHub API rate limit
   core.info(`${context.payload.pull_request.changed_files} files are changed in the pull request`)
   if (context.payload.pull_request.changed_files > 1000) {
     core.info(`Fallback due to too many changed files`)
-    return await fallback(inputs)
+    return await matchWorkingDirectory(inputs)
   }
 
   core.info(`List files in the pull request`)
@@ -48,35 +44,20 @@ export const run = async (inputs: Inputs, context: Context, octokit: Octokit): P
 
   if (match.matchGroups(inputs.pathsFallback, changedFiles).paths.length > 0) {
     core.info(`Fallback due to paths-fallback matches to the changed files`)
-    return await fallback(inputs)
+    return await matchWorkingDirectory(inputs)
   }
 
   const matchResult = match.matchGroups(inputs.paths, changedFiles)
   core.info(`Transform paths by the changed files`)
-  const variableMap = new Map<string, string>()
-  for (const [key, pattern] of inputs.outputsMap) {
-    const paths = match.transform(pattern, matchResult.variableMaps)
-    const variableValue = encodeVariableValues(paths, inputs.outputsEncoding)
-    variableMap.set(key, variableValue)
-  }
   if (inputs.transform.length > 0) {
     const transformedPaths = inputs.transform.flatMap((pattern) => match.transform(pattern, matchResult.variableMaps))
     return {
       paths: transformedPaths,
-      map: variableMap,
     }
   }
   return {
     paths: matchResult.paths,
-    map: variableMap,
   }
-}
-
-const fallback = async (inputs: Inputs): Promise<Outputs> => {
-  if (inputs.fallbackMethod === 'wildcard') {
-    return fallbackToWildcard(inputs)
-  }
-  return await matchWorkingDirectory(inputs)
 }
 
 const matchWorkingDirectory = async (inputs: Inputs): Promise<Outputs> => {
@@ -89,7 +70,6 @@ const matchWorkingDirectory = async (inputs: Inputs): Promise<Outputs> => {
     core.warning(`Failed to list the working directory files. Empty paths will be returned`)
     return {
       paths: [],
-      map: new Map(),
     }
   }
   const workingDirectoryFiles = gitLsFiles.stdout.trim().split('\n')
@@ -97,48 +77,13 @@ const matchWorkingDirectory = async (inputs: Inputs): Promise<Outputs> => {
 
   const matchResult = match.matchGroups(inputs.paths, workingDirectoryFiles)
   core.info(`Transform paths by the working directory files`)
-  const variableMap = new Map<string, string>()
-  for (const [key, pattern] of inputs.outputsMap) {
-    const paths = match.transform(pattern, matchResult.variableMaps)
-    const variableValue = encodeVariableValues(paths, inputs.outputsEncoding)
-    variableMap.set(key, variableValue)
-  }
   if (inputs.transform.length > 0) {
     const transformedPaths = inputs.transform.flatMap((pattern) => match.transform(pattern, matchResult.variableMaps))
     return {
       paths: transformedPaths,
-      map: variableMap,
     }
   }
   return {
     paths: matchResult.paths,
-    map: variableMap,
   }
-}
-
-const fallbackToWildcard = (inputs: Inputs): Outputs => {
-  const variableMap = new Map<string, string>()
-  for (const [key, pattern] of inputs.outputsMap) {
-    const paths = match.transformToWildcard(pattern)
-    const variableValue = encodeVariableValues(paths, inputs.outputsEncoding)
-    variableMap.set(key, variableValue)
-  }
-  if (inputs.transform.length > 0) {
-    const transformedPaths = inputs.transform.flatMap((pattern) => match.transformToWildcard(pattern))
-    return {
-      paths: transformedPaths,
-      map: variableMap,
-    }
-  }
-  return {
-    paths: [],
-    map: variableMap,
-  }
-}
-
-const encodeVariableValues = (values: string[], encoding: 'multiline' | 'json'): string => {
-  if (encoding === 'json') {
-    return JSON.stringify(values)
-  }
-  return values.join('\n')
 }

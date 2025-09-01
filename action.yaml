@@ -5,22 +5,11 @@ inputs:
     description: Glob patterns (multiline)
     required: true
   paths-fallback:
-    description: Glob patterns to fallback to wildcard (multiline)
+    description: Glob patterns to fallback (multiline)
     required: false
-  fallback-method:
-    description: Fallback method, either wildcard or match-working-directory
-    required: true
-    default: wildcard
   transform:
     description: Paths to transform (multiline)
     required: false
-  outputs:
-    description: Paths to set into outputs in form of NAME=PATH (multiline)
-    required: false
-  outputs-encoding:
-    description: Encoding of outputs, either multiline or json
-    required: true
-    default: multiline
   token:
     description: GitHub token to list the changed files
     required: true

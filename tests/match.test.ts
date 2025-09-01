@@ -1,5 +1,5 @@
 import { it, expect, describe } from 'vitest'
-import { Match, VariableMap, matchGroups, transform, transformToWildcard } from '../src/match.js'
+import { Match, VariableMap, matchGroups, transform } from '../src/match.js'
 
 describe('matchGroups', () => {
   describe('basic path variable extraction', () => {
@@ -361,27 +361,5 @@ describe('transform', () => {
     ]
     const paths = transform('static/file.yaml', variableMaps)
     expect(paths).toStrictEqual(['static/file.yaml'])
-  })
-})
-
-describe('transformToWildcard', () => {
-  it('returns a wildcard pattern', () => {
-    const paths = transformToWildcard('clusters/:cluster/:component/kustomization.yaml')
-    expect(paths).toStrictEqual(['clusters/*/*/kustomization.yaml'])
-  })
-
-  it('handles patterns with no path variables', () => {
-    const paths = transformToWildcard('static/file.yaml')
-    expect(paths).toStrictEqual(['static/file.yaml'])
-  })
-
-  it('handles single path variable', () => {
-    const paths = transformToWildcard('apps/:env/config.json')
-    expect(paths).toStrictEqual(['apps/*/config.json'])
-  })
-
-  it('handles multiple path variables', () => {
-    const paths = transformToWildcard('apps/:env/:service/:version/deploy.yaml')
-    expect(paths).toStrictEqual(['apps/*/*/*/deploy.yaml'])
   })
 })

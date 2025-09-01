@@ -107,14 +107,7 @@ transform: |
   :service/manifest/kustomization.yaml
 ```
 
-If `conftest/policy/foo.rego` is changed in a pull request, this action falls back to wildcard patterns.
-It replaces all path variables with wildcard `*` as follows:
-
-```
-*/manifest/kustomization.yaml
-```
-
-If `fallback-method` is set to `match-working-directory`, it matches against the working directory files.
+If `conftest/policy/foo.rego` is changed in a pull request, this action matches against the working directory files.
 
 ## Examples
 
@@ -173,19 +166,16 @@ and finally this action sets an output to `clusters/staging/cluster-autoscaler/k
 ## Specification
 
 When this action is run on a `pull_request` or `pull_request_target` event, it inspects the changed files in the pull request.
-Otherwise, it falls back to wildcard patterns.
+Otherwise, it matches the working directory files.
 
 ### Inputs
 
-| Name               | Default        | Description                                                     |
-| ------------------ | -------------- | --------------------------------------------------------------- |
-| `paths`            | (required)     | Glob patterns (multiline)                                       |
-| `paths-fallback`   | -              | Glob patterns to fallback to wildcard (multiline)               |
-| `fallback-method`  | `wildcard`     | Fallback method, either `wildcard` or `match-working-directory` |
-| `transform`        | -              | Paths to transform (multiline)                                  |
-| `outputs`          | (required)     | Paths to set into outputs in form of `NAME=PATH` (multiline)    |
-| `outputs-encoding` | `multiline`    | Encoding of outputs, either `multiline` or `json`               |
-| `token`            | `github.token` | GitHub token to list the changed files                          |
+| Name             | Default        | Description                            |
+| ---------------- | -------------- | -------------------------------------- |
+| `paths`          | (required)     | Glob patterns (multiline)              |
+| `paths-fallback` | -              | Glob patterns to fallback (multiline)  |
+| `transform`      | -              | Paths to transform (multiline)         |
+| `token`          | `github.token` | GitHub token to list the changed files |
 
 ### Outputs
 
@@ -194,4 +184,44 @@ Otherwise, it falls back to wildcard patterns.
 | `paths`      | Changed file paths based on the input patterns |
 | `paths-json` | Changed file paths in JSON format              |
 
-This action sets the keys defined by `outputs` in inputs.
+## Migration V2
+
+The following specifications have been changed:
+
+- `outputs` input has been removed. Instead, use `transform` input and `paths` output.
+- `outputs-encoding` input has been removed.
+- `fallback-method` input has been removed. The fallback behavior is now always to match the working directory files.
+
+### Example
+
+Before (v1):
+
+```yaml
+steps:
+  - uses: int128/glob-changed-files-action@v1
+    id: glob-changed-files
+    with:
+      paths: |
+        clusters/:cluster/:component/**
+      outputs: |
+        kustomization=clusters/:cluster/:component/kustomization.yaml
+  - uses: int128/kustomize-action@v1
+    with:
+      kustomization: ${{ steps.glob-changed-files.outputs.kustomization }}
+```
+
+After (v2):
+
+```yaml
+steps:
+  - uses: int128/glob-changed-files-action@v2
+    id: glob-changed-files
+    with:
+      paths: |
+        clusters/:cluster/:component/**
+      transform: |
+        clusters/:cluster/:component/kustomization.yaml
+  - uses: int128/kustomize-action@v1
+    with:
+      kustomization: ${{ steps.glob-changed-files.outputs.paths }}
+```

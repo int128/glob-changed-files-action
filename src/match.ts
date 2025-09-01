@@ -96,5 +96,3 @@ export const transform = (pattern: string, variableMaps: VariableMap[]): string[
   }
   return [...paths]
 }
-
-export const transformToWildcard = (pattern: string): string[] => transform(pattern, [{}])
