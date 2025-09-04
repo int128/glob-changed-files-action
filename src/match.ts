@@ -78,21 +78,20 @@ const compilePattern = (pattern: string): RegExp => {
 }
 
 export const transform = (pattern: string, variableMaps: VariableMap[]): string[] => {
-  const paths = new Set<string>()
+  const transformedPaths = new Set<string>()
   for (const variableMap of variableMaps) {
-    const path = pattern
-      .split('/')
-      .map((pathSegment) =>
-        pathSegment.replaceAll(/:([a-zA-Z0-9]+)/g, (_, variableKey: string): string => {
-          const variableValue = variableMap[variableKey]
-          if (variableValue === undefined) {
-            return '*'
-          }
-          return variableValue
-        }),
-      )
-      .join('/')
-    paths.add(path)
+    let anyUndefinedVariable = false
+    const transformedPath = pattern.replaceAll(/:([a-zA-Z0-9]+)/g, (_, variableKey: string): string => {
+      const variableValue = variableMap[variableKey]
+      if (variableValue === undefined) {
+        anyUndefinedVariable = true
+        return ''
+      }
+      return variableValue
+    })
+    if (!anyUndefinedVariable) {
+      transformedPaths.add(transformedPath)
+    }
   }
-  return [...paths]
+  return [...transformedPaths]
 }

@@ -314,7 +314,7 @@ describe('transform', () => {
     ])
   })
 
-  it('handles missing group values by replacing with asterisk', () => {
+  it('ignores missing variable keys', () => {
     const variableMaps: VariableMap[] = [
       {
         cluster: 'staging',
@@ -327,7 +327,7 @@ describe('transform', () => {
     ]
     const paths = transform('clusters/:cluster/:component/kustomization.yaml', variableMaps)
     expect(paths).toStrictEqual([
-      'clusters/staging/*/kustomization.yaml',
+      // 'clusters/staging/?/kustomization.yaml' is ignored
       'clusters/production/coredns/kustomization.yaml',
     ])
   })
