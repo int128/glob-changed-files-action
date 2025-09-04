@@ -1,11 +1,16 @@
 # glob-changed-files-action [![ts](https://github.com/int128/glob-changed-files-action/actions/workflows/ts.yaml/badge.svg)](https://github.com/int128/glob-changed-files-action/actions/workflows/ts.yaml)
 
-This is an action to expand path patterns by changed files in a pull request.
+This is an action to list the changed files of a pull request.
 
 ## Motivation
 
-This action provides an alternative of `paths` trigger for a monorepo (mono repository).
-Typically a monorepo contains many modules, for example,
+This action is designed for a cross-cutting concern in a monorepo (mono repository).
+For example,
+
+- Test the Kubernetes manifests
+- Test the security policies
+
+A monorepo contains multiple modules.
 
 ```
 monorepo
@@ -16,50 +21,75 @@ monorepo
 └── common-policy
 ```
 
-This action is useful to inspect crosscutting concern against all modules.
-For example,
+For a large monorepo, it takes a long time to test all modules.
+You can reduce the number of modules to process using this action.
 
-- Policy test for Kubernetes manifests
-- Security test with common rules
+## Getting started
 
-If a monorepo has many modules, it takes a long time to process all modules.
-You can reduce the number of modules to process by this action.
+### List the changed files
 
-## Features
+This workflow shows the changed files matching the given glob pattern.
+
+```yaml
+jobs:
+  test:
+    steps:
+      - id: glob-changed-files
+        uses: int128/glob-changed-files-action@v2
+        with:
+          paths: |
+            **/kustomization.yaml
+      - run: echo "$CHANGED_FILES"
+        env:
+          CHANGED_FILES: ${{ steps.glob-changed-files.outputs.paths }}
+```
 
 ### Transform path variables
 
-This action expands path patterns by changed files in a pull request.
+Let's think about the following directory structure for Kubernetes clusters.
 
-For example, if the following path patterns are given,
+```
+clusters
+├── staging
+|   ├── cluster-autoscaler
+|   └── coredns
+└── production
+    └── cluster-autoscaler
+```
+
+This workflow runs `kustomize build` for the changed components of a pull request.
 
 ```yaml
-paths: |
-  :service/manifest/**
-transform: |
-  :service/manifest/kustomization.yaml
+jobs:
+  build:
+    steps:
+      - uses: actions/checkout@v5
+      - uses: int128/glob-changed-files-action@v2
+        id: glob-changed-files
+        with:
+          paths: |
+            clusters/:cluster/:component/**
+          transform: |
+            clusters/:cluster/:component/kustomization.yaml
+      - uses: int128/kustomize-action@v1
+        with:
+          kustomization: ${{ steps.glob-changed-files.outputs.paths }}
 ```
 
-and the following file is changed in a pull request,
+If `clusters/staging/cluster-autoscaler/config.yaml` is changed in a pull request, this action transforms the path as follows:
 
-```
-microservice1/manifest/deployment.yaml
-```
+- Evaluate the path pattern `clusters/:cluster/:component/**`.
+  - It has the path variable `:cluster`.
+  - It has the path variable `:component`.
+- Match the changed path `clusters/staging/cluster-autoscaler/config.yaml` against the pattern.
+  - The path variable `:cluster` is `staging`.
+  - The path variable `:component` is `cluster-autoscaler`.
+  - The transformed path is `clusters/staging/cluster-autoscaler/kustomization.yaml`.
 
-this action determines the path variable as follows:
-
-```
-":service" => "microservice1"
-```
-
-Finally this action expands the pattern as follows:
-
-```
-microservice1/manifest/kustomization.yaml
-```
+Finally, this action returns `clusters/staging/cluster-autoscaler/kustomization.yaml`.
 
 A path variable can be defined by `:VARIABLE` in the patterns of `paths`.
-It can be used in `outputs` to set the output value.
+It can be used in `transform` to set the output value.
 
 A path variable starts with a colon `:`, and contains alphanumeric characters.
 You can use a path variable in a path segment.
@@ -87,14 +117,13 @@ this action ignores files matching negative patterns such as `README.md`.
 
 If any changed files did not match the patterns, the output value is empty.
 
-This feature reduces a number of modules to process in a workflow.
+### Fall back to working directory files
 
-### Fallback
+For the following cases, this action falls back to matching the working directory files.
 
-This action falls back for the following cases:
-
-- Any pattern in `paths-fallback` is matched
-- Pull request contains more than 1,000 changed files
+- Any pattern of `paths-fallback` is matched.
+- Pull request contains more than 1,000 changed files.
+- This action is not run on a `pull_request` or `pull_request_target` event.
 
 Here is an example workflow.
 
@@ -108,60 +137,6 @@ transform: |
 ```
 
 If `conftest/policy/foo.rego` is changed in a pull request, this action matches against the working directory files.
-
-## Examples
-
-### Usecase: build manifests against changed paths
-
-Let's think a case of monorepo with Kubernetes components.
-For example,
-
-```
-clusters
-├── staging
-|   ├── cluster-autoscaler
-|   └── coredns
-└── production
-    └── cluster-autoscaler
-```
-
-To run `kustomize build` for changed components in a pull request:
-
-```yaml
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: int128/glob-changed-files-action@v1
-        id: glob-changed-files
-        with:
-          paths: |
-            clusters/:cluster/:component/**
-          transform: |
-            clusters/:cluster/:component/kustomization.yaml
-      - uses: int128/kustomize-action@v1
-        with:
-          kustomization: ${{ steps.glob-changed-files.outputs.paths }}
-```
-
-This action transforms the paths by the following rule:
-
-```
-clusters/:cluster/:component/**
-↓
-clusters/:cluster/:component/kustomization.yaml
-```
-
-If `clusters/staging/cluster-autoscaler/config.yaml` is changed in a pull request, the rule would be:
-
-```
-clusters/staging/cluster-autoscaler/**
-↓
-clusters/staging/cluster-autoscaler/kustomization.yaml
-```
-
-and finally this action sets an output to `clusters/staging/cluster-autoscaler/kustomization.yaml`.
 
 ## Specification
 
