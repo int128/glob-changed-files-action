@@ -44,6 +44,9 @@ jobs:
           CHANGED_FILES: ${{ steps.glob-changed-files.outputs.paths }}
 ```
 
+For `pull_request` or `pull_request_target` events, this action inspects the changed files in the pull request.
+Otherwise, it matches the working directory files.
+
 ### Transform path variables
 
 Let's think about the following directory structure for Kubernetes clusters.
