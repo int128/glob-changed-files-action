@@ -1,9 +1,9 @@
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
+import * as fs from 'fs/promises'
 import * as match from './match.js'
 import * as stream from 'stream'
 import { Context } from './github.js'
-import { Octokit } from '@octokit/action'
 
 type Inputs = {
   paths: string[]
@@ -15,7 +15,7 @@ type Outputs = {
   paths: string[]
 }
 
-export const run = async (inputs: Inputs, context: Context, octokit: Octokit): Promise<Outputs> => {
+export const run = async (inputs: Inputs, context: Context): Promise<Outputs> => {
   if (!('pull_request' in context.payload && 'number' in context.payload)) {
     core.info(`Fallback due to not pull_request event`)
     return await matchWorkingDirectory(inputs)
@@ -28,18 +28,12 @@ export const run = async (inputs: Inputs, context: Context, octokit: Octokit): P
     return await matchWorkingDirectory(inputs)
   }
 
-  core.info(`List files in the pull request`)
-  const listFiles = await octokit.paginate(
-    octokit.rest.pulls.listFiles,
-    {
-      owner: context.payload.pull_request.base.repo.owner.login,
-      repo: context.payload.pull_request.base.repo.name,
-      pull_number: context.payload.pull_request.number,
-      per_page: 100,
-    },
-    (r) => r.data,
+  core.info(`List changed files in the pull request`)
+  const changedFiles = await diffBetweenCommits(
+    context.payload.pull_request.base.sha,
+    context.payload.pull_request.head.sha,
+    context,
   )
-  const changedFiles = listFiles.map((f) => f.filename)
   core.info(`Received a list of ${changedFiles.length} files`)
 
   if (match.matchGroups(inputs.pathsFallback, changedFiles).paths.length > 0) {
@@ -86,4 +80,24 @@ const matchWorkingDirectory = async (inputs: Inputs): Promise<Outputs> => {
   return {
     paths: matchResult.paths,
   }
+}
+
+const diffBetweenCommits = async (base: string, head: string, context: Context): Promise<string[]> => {
+  const cwd = await fs.mkdtemp(`${context.runnerTemp}/glob-changed-files-action-`)
+
+  await exec.exec('git', ['init'], { cwd })
+  await exec.exec('git', ['remote', 'add', 'origin', `https://github.com/${context.repo.owner}/${context.repo.repo}`], {
+    cwd,
+  })
+  const credentials = Buffer.from(`x-access-token:${process.env.INPUT_TOKEN}`).toString('base64')
+  core.setSecret(credentials)
+  await exec.exec(
+    'git',
+    ['config', '--local', 'http.https://github.com/.extraheader', `AUTHORIZATION: basic ${credentials}`],
+    { cwd },
+  )
+  await exec.exec('git', ['fetch', '--depth=1', 'origin', base, head], { cwd })
+
+  const gitDiff = await exec.getExecOutput('git', ['diff', '--name-only', base, head], { cwd })
+  return gitDiff.stdout.trim().split('\n')
 }
