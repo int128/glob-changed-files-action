@@ -1,6 +1,6 @@
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
-import * as fs from 'fs/promises'
+import * as git from './git.js'
 import * as match from './match.js'
 import * as stream from 'stream'
 import { Context } from './github.js'
@@ -21,20 +21,13 @@ export const run = async (inputs: Inputs, context: Context): Promise<Outputs> =>
     return await matchWorkingDirectory(inputs)
   }
 
-  // Limit the max number of changed files to prevent GitHub API rate limit
-  core.info(`${context.payload.pull_request.changed_files} files are changed in the pull request`)
-  if (context.payload.pull_request.changed_files > 1000) {
-    core.info(`Fallback due to too many changed files`)
-    return await matchWorkingDirectory(inputs)
-  }
-
-  core.info(`List changed files in the pull request`)
-  const changedFiles = await diffBetweenCommits(
+  core.info(`Comparing the base and head of the pull request`)
+  const changedFiles = await git.compareCommits(
     context.payload.pull_request.base.sha,
     context.payload.pull_request.head.sha,
     context,
   )
-  core.info(`Received a list of ${changedFiles.length} files`)
+  core.info(`Found ${changedFiles.length} changed files`)
 
   if (match.matchGroups(inputs.pathsFallback, changedFiles).paths.length > 0) {
     core.info(`Fallback due to paths-fallback matches to the changed files`)
@@ -80,24 +73,4 @@ const matchWorkingDirectory = async (inputs: Inputs): Promise<Outputs> => {
   return {
     paths: matchResult.paths,
   }
-}
-
-const diffBetweenCommits = async (base: string, head: string, context: Context): Promise<string[]> => {
-  const cwd = await fs.mkdtemp(`${context.runnerTemp}/glob-changed-files-action-`)
-
-  await exec.exec('git', ['init'], { cwd })
-  await exec.exec('git', ['remote', 'add', 'origin', `https://github.com/${context.repo.owner}/${context.repo.repo}`], {
-    cwd,
-  })
-  const credentials = Buffer.from(`x-access-token:${process.env.INPUT_TOKEN}`).toString('base64')
-  core.setSecret(credentials)
-  await exec.exec(
-    'git',
-    ['config', '--local', 'http.https://github.com/.extraheader', `AUTHORIZATION: basic ${credentials}`],
-    { cwd },
-  )
-  await exec.exec('git', ['fetch', '--depth=1', 'origin', base, head], { cwd })
-
-  const gitDiff = await exec.getExecOutput('git', ['diff', '--name-only', base, head], { cwd })
-  return gitDiff.stdout.trim().split('\n')
 }
