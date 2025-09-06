@@ -1,6 +1,6 @@
 import * as core from '@actions/core'
 import { run } from './run.js'
-import { getContext, getOctokit } from './github.js'
+import { getContext } from './github.js'
 
 const main = async (): Promise<void> => {
   if (core.getInput('outputs')) {
@@ -26,7 +26,6 @@ const main = async (): Promise<void> => {
       transform: core.getMultilineInput('transform'),
     },
     await getContext(),
-    getOctokit(),
   )
   core.setOutput('paths', outputs.paths.join('\n'))
   core.setOutput('paths-json', outputs.paths)

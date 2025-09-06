@@ -125,7 +125,6 @@ If any changed files did not match the patterns, the output value is empty.
 For the following cases, this action falls back to matching the working directory files.
 
 - Any pattern of `paths-fallback` is matched.
-- Pull request contains more than 1,000 changed files.
 - This action is not run on a `pull_request` or `pull_request_target` event.
 
 Here is an example workflow.
