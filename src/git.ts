@@ -5,7 +5,7 @@ import { Context, getToken } from './github.js'
 
 export const compareCommits = async (base: string, head: string, context: Context): Promise<string[]> => {
   return await withWorkspaceOrTemporary(context, async (cwd) => {
-    await exec.exec('git', ['fetch', '--depth=1', 'origin', base, head], { cwd })
+    await exec.exec('git', ['fetch', '--no-tags', '--depth=1', 'origin', base, head], { cwd })
 
     const gitDiff = await exec.getExecOutput('git', ['diff', '--name-only', base, head], { cwd })
     return gitDiff.stdout.trim().split('\n')
