@@ -17,11 +17,14 @@ const withWorkspaceOrTemporary = async <T>(context: Context, fn: (cwd: string) =
     cwd: context.workspace,
     ignoreReturnCode: true,
   })
-  if (
-    gitGetUrl.exitCode === 0 &&
-    gitGetUrl.stdout.trim() === `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}.git`
-  ) {
-    return await fn(context.workspace)
+  if (gitGetUrl.exitCode === 0) {
+    const workspaceUrl = gitGetUrl.stdout.trim()
+    if (
+      workspaceUrl === `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}.git` ||
+      workspaceUrl === `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}`
+    ) {
+      return await fn(context.workspace)
+    }
   }
 
   const cwd = await fs.mkdtemp(`${context.runnerTemp}/glob-changed-files-action-`)
