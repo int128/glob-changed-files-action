@@ -4,6 +4,26 @@ import * as fs from 'fs/promises'
 import { Context, getToken } from './github.js'
 
 export const compareCommits = async (base: string, head: string, context: Context): Promise<string[]> => {
+  return await withWorkspaceOrTemporary(context, async (cwd) => {
+    await exec.exec('git', ['fetch', '--depth=1', 'origin', base, head], { cwd })
+
+    const gitDiff = await exec.getExecOutput('git', ['diff', '--name-only', base, head], { cwd })
+    return gitDiff.stdout.trim().split('\n')
+  })
+}
+
+const withWorkspaceOrTemporary = async <T>(context: Context, fn: (cwd: string) => Promise<T>): Promise<T> => {
+  const gitGetUrl = await exec.getExecOutput('git', ['ls-remote', '--get-url'], {
+    cwd: context.workspace,
+    ignoreReturnCode: true,
+  })
+  if (
+    gitGetUrl.exitCode === 0 &&
+    gitGetUrl.stdout.trim() === `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}.git`
+  ) {
+    return await fn(context.workspace)
+  }
+
   const cwd = await fs.mkdtemp(`${context.runnerTemp}/glob-changed-files-action-`)
   try {
     await exec.exec('git', ['init', '--quiet'], { cwd })
@@ -19,10 +39,7 @@ export const compareCommits = async (base: string, head: string, context: Contex
       ['config', '--local', `http.${context.serverUrl}/.extraheader`, `AUTHORIZATION: basic ${credentials}`],
       { cwd },
     )
-    await exec.exec('git', ['fetch', '--depth=1', 'origin', base, head], { cwd })
-
-    const gitDiff = await exec.getExecOutput('git', ['diff', '--name-only', base, head], { cwd })
-    return gitDiff.stdout.trim().split('\n')
+    return await fn(cwd)
   } finally {
     await fs.rm(cwd, { recursive: true, force: true })
   }
