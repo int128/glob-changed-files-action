@@ -50,7 +50,22 @@ This action determines the changed files as follows:
 - For `push` events, it compares the before commit and after commit.
 - Otherwise, it falls back to the working directory files.
 
-### Transform path patterns
+You can exclude files from the path patterns by using the `!` prefix.
+For example, this workflow excludes any Markdown files such as `README.md`.
+
+```yaml
+jobs:
+  test:
+    steps:
+      - id: glob-changed-files
+        uses: int128/glob-changed-files-action@v2
+        with:
+          paths: |
+            **/kustomization.yaml
+            !**/*.md
+```
+
+### Transform the path patterns
 
 Here is an example directory structure for Kubernetes components.
 
@@ -92,7 +107,7 @@ For example, if `cluster-autoscaler/staging/configmap.yaml` is changed, this act
 - Evaluate the path pattern `:component/:cluster/**`.
   - It has the path variable `:component`.
   - It has the path variable `:cluster`.
-- Match the changed path `cluster-autoscaler/staging/configmap.yaml` against the pattern.
+- Match the changed path `cluster-autoscaler/staging/configmap.yaml`.
   - The path variable `:component` is `cluster-autoscaler`.
   - The path variable `:cluster` is `staging`.
   - The transformed path is `cluster-autoscaler/staging/kustomization.yaml`.
@@ -138,11 +153,10 @@ For example, if `conftest/policy/foo.rego` is changed in a pull request, this ac
 
 ### Path patterns
 
-A path variable can be defined by `:VARIABLE` in the patterns of `paths`.
-It can be used in `transform` to set the output value.
+Path variables are available in the path patterns of `paths` and `transform`.
 
-A path variable starts with a colon `:`, and contains alphanumeric characters.
-You can use a path variable in a path segment.
+A path variable can be defined by `:VARIABLE`.
+It starts with a colon `:`, and contains only alphanumeric characters.
 For example,
 
 ```yaml
@@ -153,23 +167,6 @@ For example,
     transform: |
       :workflow
 ```
-
-If a pattern is prefixed with `!`, it is treated as a negative pattern.
-For example, if the following path patterns are given,
-
-```yaml
-- uses: int128/glob-changed-files-action@v2
-  with:
-    paths: |
-      :component/:cluster/**
-      !**/*.md
-    transform: |
-      :component/:cluster/kustomization.yaml
-```
-
-this action ignores files matching negative patterns such as `README.md`.
-
-If any changed files did not match the patterns, the output value is empty.
 
 ### Inputs
 
