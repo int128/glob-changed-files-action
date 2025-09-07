@@ -48,8 +48,8 @@ jobs:
           PATHS: ${{ steps.glob-changed-files.outputs.paths }}
 
       - uses: ./
-        name: Run int128/glob-changed-files-action
-        id: glob-changed-files-json
+        name: Run int128/glob-changed-files-action with paths-fallback
+        id: glob-changed-files-paths-fallback
         with:
           paths: |
             :dir/**
@@ -58,7 +58,18 @@ jobs:
             src/**
       - run: jq . <<< "$PATHS"
         env:
-          PATHS: ${{ steps.glob-changed-files-json.outputs.paths-json }}
+          PATHS: ${{ steps.glob-changed-files-paths-fallback.outputs.paths-json }}
+
+      - run: rm -rf .git
+      - uses: ./
+        name: Run int128/glob-changed-files-action without actions/checkout
+        id: glob-changed-files-without-actions-checkout
+        with:
+          paths: |
+            :dir/**
+      - run: test "$PATHS"
+        env:
+          PATHS: ${{ steps.glob-changed-files-without-actions-checkout.outputs.paths }}
 
   generate:
     runs-on: ubuntu-latest
