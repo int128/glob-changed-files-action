@@ -11,6 +11,7 @@ on:
   push:
     branches:
       - main
+      - int128/Support-push-event # TODO: remove
     paths:
       - src/**
       - tests/**
