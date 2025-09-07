@@ -50,17 +50,37 @@ This action determines the changed files as follows:
 - For `push` events, it compares the before commit and after commit.
 - Otherwise, it falls back to the working directory files.
 
-### Transform path variables
+You can exclude files from the path patterns by using the `!` prefix.
+For example, this workflow excludes any Markdown files such as `README.md`.
 
-Let's think about the following directory structure for Kubernetes clusters.
+```yaml
+jobs:
+  test:
+    steps:
+      - id: glob-changed-files
+        uses: int128/glob-changed-files-action@v2
+        with:
+          paths: |
+            **/kustomization.yaml
+            !**/*.md
+```
+
+### Transform the path patterns
+
+Here is an example directory structure for Kubernetes components.
 
 ```
-clusters
-├── staging
-|   ├── cluster-autoscaler
-|   └── coredns
-└── production
-    └── cluster-autoscaler
+.
+├── cluster-autoscaler
+|   ├── staging
+|   |   └── kustomization.yaml
+|   └── production
+|       └── kustomization.yaml
+└── coredns
+    ├── staging
+    |   └── kustomization.yaml
+    └── production
+        └── kustomization.yaml
 ```
 
 This workflow runs `kustomize build` for the changed components of a pull request.
@@ -74,76 +94,79 @@ jobs:
         id: glob-changed-files
         with:
           paths: |
-            clusters/:cluster/:component/**
+            :component/:cluster/**
           transform: |
-            clusters/:cluster/:component/kustomization.yaml
+            :component/:cluster/kustomization.yaml
       - uses: int128/kustomize-action@v1
         with:
           kustomization: ${{ steps.glob-changed-files.outputs.paths }}
 ```
 
-If `clusters/staging/cluster-autoscaler/config.yaml` is changed in a pull request, this action transforms the path as follows:
+For example, if `cluster-autoscaler/staging/configmap.yaml` is changed, this action transforms the path as follows:
 
-- Evaluate the path pattern `clusters/:cluster/:component/**`.
-  - It has the path variable `:cluster`.
+- Evaluate the path pattern `:component/:cluster/**`.
   - It has the path variable `:component`.
-- Match the changed path `clusters/staging/cluster-autoscaler/config.yaml` against the pattern.
-  - The path variable `:cluster` is `staging`.
+  - It has the path variable `:cluster`.
+- Match the changed path `cluster-autoscaler/staging/configmap.yaml`.
   - The path variable `:component` is `cluster-autoscaler`.
-  - The transformed path is `clusters/staging/cluster-autoscaler/kustomization.yaml`.
+  - The path variable `:cluster` is `staging`.
+  - The transformed path is `cluster-autoscaler/staging/kustomization.yaml`.
 
-Finally, this action returns `clusters/staging/cluster-autoscaler/kustomization.yaml`.
-
-A path variable can be defined by `:VARIABLE` in the patterns of `paths`.
-It can be used in `transform` to set the output value.
-
-A path variable starts with a colon `:`, and contains alphanumeric characters.
-You can use a path variable in a path segment.
-For example,
-
-```yaml
-paths: |
-  .github/workflows/:workflow.yaml
-transform: |
-  :workflow
-```
-
-If a pattern is prefixed with `!`, it is treated as a negative pattern.
-For example, if the following path patterns are given,
-
-```yaml
-paths: |
-  clusters/:cluster/:component/**
-  !**/*.md
-transform: |
-  clusters/:cluster/:component/kustomization.yaml
-```
-
-this action ignores files matching negative patterns such as `README.md`.
-
-If any changed files did not match the patterns, the output value is empty.
+Finally, this action returns `cluster-autoscaler/staging/kustomization.yaml`.
 
 ### Fall back to the working directory files
 
-For the following cases, this action falls back to the working directory files.
+This action falls back to the working directory files for the following cases:
 
-- Any pattern of `paths-fallback` is matched.
+- Any path pattern of `paths-fallback` is matched.
 - This action is not run on a `pull_request`, `pull_request_target`, or `push` event.
 
-Here is an example workflow.
+This workflow runs `conftest` for the changed components of a pull request.
 
 ```yaml
-paths: |
-  :service/manifest/**
-paths-fallback: |
-  conftest/**
-transform: |
-  :service/manifest/kustomization.yaml
+jobs:
+  test:
+    steps:
+      - uses: actions/checkout@v5
+      - id: glob-changed-files
+        uses: int128/glob-changed-files-action@v2
+        with:
+          paths: |
+            :component/:cluster/**
+          # Test all components when the conftest policy is changed.
+          paths-fallback: |
+            conftest/**
+          transform: |
+            :component/:cluster/kustomization.yaml
+
+      - id: kustomize
+        uses: int128/kustomize-action@v1
+        with:
+          kustomization: ${{ steps.glob-changed-files.outputs.paths }}
+      - if: steps.kustomize.outputs.files
+        run: conftest test -p conftest '${{ steps.kustomize.outputs.directory }}'
 ```
 
-If `conftest/policy/foo.rego` is changed in a pull request, this action matches against the working directory files.
+For example, if `conftest/policy/foo.rego` is changed in a pull request, this action matches against the working directory files.
 
 ## Specification
+
+### Path patterns
+
+Path variables are available in the path patterns of `paths` and `transform`.
+
+A path variable can be defined by `:VARIABLE`.
+It starts with a colon `:`, and contains only alphanumeric characters.
+For example,
+
+```yaml
+- uses: int128/glob-changed-files-action@v2
+  with:
+    paths: |
+      .github/workflows/:workflow.yaml
+    transform: |
+      :workflow
+```
 
 ### Inputs
 
