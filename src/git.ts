@@ -17,6 +17,7 @@ const withWorkspaceOrTemporaryDirectory = async <T>(context: Context, fn: (cwd: 
   }
 
   const cwd = await fs.mkdtemp(`${context.runnerTemp}/glob-changed-files-action-`)
+  core.info(`Fetching the repository into ${cwd}`)
   try {
     await exec.exec('git', ['init', '--quiet'], { cwd })
     await exec.exec(
@@ -34,6 +35,7 @@ const withWorkspaceOrTemporaryDirectory = async <T>(context: Context, fn: (cwd: 
     return await fn(cwd)
   } finally {
     await fs.rm(cwd, { recursive: true, force: true })
+    core.info(`Removed ${cwd}`)
   }
 }
 
