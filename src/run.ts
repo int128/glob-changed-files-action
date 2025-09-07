@@ -16,17 +16,23 @@ type Outputs = {
 }
 
 export const run = async (inputs: Inputs, context: Context): Promise<Outputs> => {
-  if (!('pull_request' in context.payload && 'number' in context.payload)) {
-    core.info(`Fallback due to not pull_request event`)
-    return await matchWorkingDirectory(inputs)
+  if ('pull_request' in context.payload) {
+    const base = context.payload.pull_request.base.sha
+    const head = context.payload.pull_request.head.sha
+    core.info(`Comparing base ${base} and head ${head} of the pull request: ${context.payload.pull_request.html_url}`)
+    return await matchChangedFiles(base, head, inputs, context)
   }
+  if ('before' in context.payload && 'after' in context.payload) {
+    const before = context.payload.before
+    const after = context.payload.after
+    core.info(`Comparing before ${before} and after ${after} of the push event: ${context.payload.compare}`)
+    return await matchChangedFiles(before, after, inputs, context)
+  }
+  return await matchWorkingDirectory(inputs)
+}
 
-  core.info(`Comparing the base and head of the pull request`)
-  const changedFiles = await git.compareCommits(
-    context.payload.pull_request.base.sha,
-    context.payload.pull_request.head.sha,
-    context,
-  )
+const matchChangedFiles = async (base: string, head: string, inputs: Inputs, context: Context): Promise<Outputs> => {
+  const changedFiles = await git.compareCommits(base, head, context)
   core.info(`Found ${changedFiles.length} changed files`)
 
   if (match.matchGroups(inputs.pathsFallback, changedFiles).paths.length > 0) {

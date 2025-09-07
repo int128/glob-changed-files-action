@@ -44,8 +44,11 @@ jobs:
           CHANGED_FILES: ${{ steps.glob-changed-files.outputs.paths }}
 ```
 
-For `pull_request` or `pull_request_target` events, this action inspects the changed files in the pull request.
-Otherwise, it matches the working directory files.
+This action determines the changed files as follows:
+
+- For `pull_request` or `pull_request_target` events, it compares the base commit and head commit of the pull request.
+- For `push` events, it compares the before commit and after commit.
+- Otherwise, it falls back to the working directory files.
 
 ### Transform path variables
 
@@ -120,12 +123,12 @@ this action ignores files matching negative patterns such as `README.md`.
 
 If any changed files did not match the patterns, the output value is empty.
 
-### Fall back to working directory files
+### Fall back to the working directory files
 
-For the following cases, this action falls back to matching the working directory files.
+For the following cases, this action falls back to the working directory files.
 
 - Any pattern of `paths-fallback` is matched.
-- This action is not run on a `pull_request` or `pull_request_target` event.
+- This action is not run on a `pull_request`, `pull_request_target`, or `push` event.
 
 Here is an example workflow.
 
@@ -141,9 +144,6 @@ transform: |
 If `conftest/policy/foo.rego` is changed in a pull request, this action matches against the working directory files.
 
 ## Specification
-
-When this action is run on a `pull_request` or `pull_request_target` event, it inspects the changed files in the pull request.
-Otherwise, it matches the working directory files.
 
 ### Inputs
 
