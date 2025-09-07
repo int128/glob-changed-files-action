@@ -4,27 +4,16 @@ import * as fs from 'fs/promises'
 import { Context, getToken } from './github.js'
 
 export const compareCommits = async (base: string, head: string, context: Context): Promise<string[]> => {
-  return await withWorkspaceOrTemporary(context, async (cwd) => {
+  return await withWorkspaceOrTemporaryDirectory(context, async (cwd) => {
     await exec.exec('git', ['fetch', '--no-tags', '--depth=1', 'origin', base, head], { cwd })
-
     const gitDiff = await exec.getExecOutput('git', ['diff', '--name-only', base, head], { cwd })
     return gitDiff.stdout.trim().split('\n')
   })
 }
 
-const withWorkspaceOrTemporary = async <T>(context: Context, fn: (cwd: string) => Promise<T>): Promise<T> => {
-  const gitGetUrl = await exec.getExecOutput('git', ['ls-remote', '--get-url'], {
-    cwd: context.workspace,
-    ignoreReturnCode: true,
-  })
-  if (gitGetUrl.exitCode === 0) {
-    const workspaceUrl = gitGetUrl.stdout.trim()
-    if (
-      workspaceUrl === `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}.git` ||
-      workspaceUrl === `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}`
-    ) {
-      return await fn(context.workspace)
-    }
+const withWorkspaceOrTemporaryDirectory = async <T>(context: Context, fn: (cwd: string) => Promise<T>): Promise<T> => {
+  if (await workspaceHasGitRepository(context)) {
+    return await fn(context.workspace)
   }
 
   const cwd = await fs.mkdtemp(`${context.runnerTemp}/glob-changed-files-action-`)
@@ -46,4 +35,19 @@ const withWorkspaceOrTemporary = async <T>(context: Context, fn: (cwd: string) =
   } finally {
     await fs.rm(cwd, { recursive: true, force: true })
   }
+}
+
+const workspaceHasGitRepository = async (context: Context) => {
+  const gitGetUrl = await exec.getExecOutput('git', ['ls-remote', '--get-url'], {
+    cwd: context.workspace,
+    ignoreReturnCode: true,
+  })
+  if (gitGetUrl.exitCode !== 0) {
+    return false
+  }
+  const remoteUrl = gitGetUrl.stdout.trim()
+  return (
+    remoteUrl === `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}.git` ||
+    remoteUrl === `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}`
+  )
 }
