@@ -19,21 +19,15 @@ export const run = async (inputs: Inputs, context: Context): Promise<Outputs> =>
   if ('pull_request' in context.payload) {
     const base = context.payload.pull_request.base.sha
     const head = context.payload.pull_request.head.sha
-    core.info(`Handling the pull_request event: ${context.payload.pull_request.html_url}`)
-    core.info(`The base commit is ${base}`)
-    core.info(`The head commit is ${head}`)
+    core.info(`Comparing base ${base} and head ${head} of the pull request: ${context.payload.pull_request.html_url}`)
     return await matchChangedFiles(base, head, inputs, context)
   }
-
   if ('before' in context.payload && 'after' in context.payload) {
     const before = context.payload.before
     const after = context.payload.after
-    core.info(`Handling the push event: ${context.payload.compare}`)
-    core.info(`The before commit is ${before}`)
-    core.info(`The after commit is ${after}`)
+    core.info(`Comparing before ${before} and after ${after} of the push event: ${context.payload.compare}`)
     return await matchChangedFiles(before, after, inputs, context)
   }
-
   return await matchWorkingDirectory(inputs)
 }
 
