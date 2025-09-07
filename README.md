@@ -44,7 +44,7 @@ jobs:
           CHANGED_FILES: ${{ steps.glob-changed-files.outputs.paths }}
 ```
 
-This action fetches the changed files as follows:
+This action determines the changed files as follows:
 
 - For `pull_request` or `pull_request_target` events, it compares the base commit and head commit of the pull request.
 - For `push` events, it compares the before commit and after commit.
