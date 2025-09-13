@@ -4,25 +4,14 @@ This is an action to list the changed files of a pull request.
 
 ## Motivation
 
-This action is designed for a cross-cutting concern in a monorepo (mono repository).
+This action is designed for a cross-cutting concern in a monorepo (mono-repository).
 For example,
 
 - Test the Kubernetes manifests
 - Test the security policies
 
-A monorepo contains multiple modules.
-
-```
-monorepo
-├── microservice1
-├── microservice2
-├── ...
-├── microserviceN
-└── common-policy
-```
-
-For a large monorepo, it takes a long time to test all modules.
-You can reduce the number of modules to process using this action.
+It takes a long time to test all modules in a large monorepo.
+This action helps you reduce the number of modules to process by using the changed files.
 
 ## Getting started
 
@@ -156,6 +145,8 @@ For example, if `conftest/policy/foo.rego` is changed in a pull request, this ac
 
 This action returns both `paths` (multiline) and `paths-json` (JSON) outputs.
 You can pass the `paths-json` output to the matrix job.
+
+Here is an example workflow to test the changed services in a monorepo.
 
 ```yaml
 jobs:
