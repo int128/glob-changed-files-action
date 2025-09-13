@@ -43,9 +43,12 @@ jobs:
             :dir/**
           transform: |
             :dir
-      - run: test "$PATHS"
+      - run: |
+          while read -r changed_file; do
+            echo "$changed_file"
+          done <<< "$CHANGED_FILES"
         env:
-          PATHS: ${{ steps.glob-changed-files.outputs.paths }}
+          CHANGED_FILES: ${{ steps.glob-changed-files.outputs.paths }}
 
       - uses: ./
         name: Run int128/glob-changed-files-action with paths-fallback
@@ -56,9 +59,9 @@ jobs:
           paths-fallback: |
             .github/workflows/**
             src/**
-      - run: jq . <<< "$PATHS"
+      - run: jq . <<< "$CHANGED_FILES"
         env:
-          PATHS: ${{ steps.glob-changed-files-paths-fallback.outputs.paths-json }}
+          CHANGED_FILES: ${{ steps.glob-changed-files-paths-fallback.outputs.paths-json }}
 
       - run: rm -rf .git
       - uses: ./
@@ -66,10 +69,10 @@ jobs:
         id: glob-changed-files-without-actions-checkout
         with:
           paths: |
-            :dir/**
-      - run: test "$PATHS"
+            **
+      - run: test "$CHANGED_FILES"
         env:
-          PATHS: ${{ steps.glob-changed-files-without-actions-checkout.outputs.paths }}
+          CHANGED_FILES: ${{ steps.glob-changed-files-without-actions-checkout.outputs.paths }}
 
   generate:
     runs-on: ubuntu-latest
