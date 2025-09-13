@@ -39,7 +39,10 @@ jobs:
         with:
           paths: |
             **/kustomization.yaml
-      - run: echo "$CHANGED_FILES"
+      - run: |
+          while read -r changed_file; do
+            echo "$changed_file"
+          done <<< "$CHANGED_FILES"
         env:
           CHANGED_FILES: ${{ steps.glob-changed-files.outputs.paths }}
 ```
@@ -148,6 +151,48 @@ jobs:
 ```
 
 For example, if `conftest/policy/foo.rego` is changed in a pull request, this action matches against the working directory files.
+
+### Pass the output to the matrix job
+
+This action returns both `paths` (multiline) and `paths-json` (JSON) outputs.
+You can pass the `paths-json` output to the matrix job.
+
+```yaml
+jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      changed-services: ${{ steps.glob-changed-files.outputs.paths-json }}
+    steps:
+      - uses: actions/checkout@v5
+      - id: glob-changed-files
+        uses: int128/glob-changed-files-action@v2
+        with:
+          # When the code is changed, test the changed services.
+          paths: |
+            :service/**/*.rb
+            :service/Gemfile
+            :service/Gemfile.lock
+          # When this workflow file is changed, test the all services.
+          paths-fallback: |
+            .github/workflows/this-workflow.yaml
+          transform: |
+            :service
+
+  test:
+    needs: matrix
+    if: needs.matrix.outputs.changed-services != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJson(needs.matrix.outputs.changed-services) }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ruby/setup-ruby@v1
+        with:
+          working-directory: ${{ matrix.service }}
+```
 
 ## Specification
 
