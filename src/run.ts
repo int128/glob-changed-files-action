@@ -28,7 +28,7 @@ const determineCommitComparison = async (octokit: Octokit, context: Context) => 
   if ('pull_request' in context.payload) {
     const head = context.payload.pull_request.head.sha
     const maybeBase = context.payload.pull_request.base.sha
-    core.info(`Fetching the first commit of #${context.payload.pull_request.number}`)
+    core.startGroup(`Fetching the first commit of #${context.payload.pull_request.number}`)
     const { data: commits } = await octokit.rest.pulls.listCommits({
       owner: context.repo.owner,
       repo: context.repo.repo,
@@ -36,8 +36,8 @@ const determineCommitComparison = async (octokit: Octokit, context: Context) => 
       per_page: 1,
       page: 1,
     })
-    core.startGroup(`listCommits(#${context.payload.pull_request.number})`)
-    core.info(JSON.stringify(commits, null, 2))
+    core.info(`listCommits = ${JSON.stringify(commits, null, 2)}`)
+    core.info(`context.payload.pull_request.base.sha = ${maybeBase}`)
     core.endGroup()
     if (commits.length === 0 || commits[0].parents.length === 0) {
       core.warning(
