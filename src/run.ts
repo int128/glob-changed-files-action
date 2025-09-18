@@ -17,14 +17,14 @@ type Outputs = {
 }
 
 export const run = async (inputs: Inputs, octokit: Octokit, context: Context): Promise<Outputs> => {
-  const compare = await determineCommitComparison(octokit, context)
+  const compare = await determineCommitsToCompare(octokit, context)
   if (compare) {
     return await matchChangedFiles(compare.base, compare.head, inputs, context)
   }
   return await matchWorkingDirectory(inputs)
 }
 
-const determineCommitComparison = async (octokit: Octokit, context: Context) => {
+const determineCommitsToCompare = async (octokit: Octokit, context: Context) => {
   if ('pull_request' in context.payload) {
     const head = context.payload.pull_request.head.sha
     const maybeBase = context.payload.pull_request.base.sha
