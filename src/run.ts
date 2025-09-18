@@ -27,6 +27,8 @@ export const run = async (inputs: Inputs, octokit: Octokit, context: Context): P
 const determineCommitsToCompare = async (octokit: Octokit, context: Context) => {
   if ('pull_request' in context.payload) {
     const head = context.payload.pull_request.head.sha
+    // The base sha of pull_request event may not be the ancestor of head sha.
+    // For example, when the head branch is rebased after the pull request is created.
     const maybeBase = context.payload.pull_request.base.sha
     core.startGroup(`Fetching the first commit of #${context.payload.pull_request.number}`)
     const { data: commits } = await octokit.rest.pulls.listCommits({
