@@ -4,6 +4,7 @@ import * as git from './git.js'
 import * as match from './match.js'
 import * as stream from 'stream'
 import { Context } from './github.js'
+import { Octokit } from '@octokit/action'
 
 type Inputs = {
   paths: string[]
@@ -15,20 +16,45 @@ type Outputs = {
   paths: string[]
 }
 
-export const run = async (inputs: Inputs, context: Context): Promise<Outputs> => {
+export const run = async (inputs: Inputs, octokit: Octokit, context: Context): Promise<Outputs> => {
+  const compare = await determineCommitComparison(octokit, context)
+  if (compare) {
+    return await matchChangedFiles(compare.base, compare.head, inputs, context)
+  }
+  return await matchWorkingDirectory(inputs)
+}
+
+const determineCommitComparison = async (octokit: Octokit, context: Context) => {
   if ('pull_request' in context.payload) {
-    const base = context.payload.pull_request.base.sha
     const head = context.payload.pull_request.head.sha
+    const maybeBase = context.payload.pull_request.base.sha
+    core.info(`Fetching the first commit of #${context.payload.pull_request.number}`)
+    const { data: commits } = await octokit.rest.pulls.listCommits({
+      owner: context.repo.owner,
+      repo: context.repo.repo,
+      pull_number: context.payload.pull_request.number,
+      per_page: 1,
+      page: 1,
+    })
+    core.startGroup(`listCommits(#${context.payload.pull_request.number})`)
+    core.info(JSON.stringify(commits, null, 2))
+    core.endGroup()
+    if (commits.length === 0 || commits[0].parents.length === 0) {
+      core.warning(
+        `The pull request does not have any parent commit. Using the base sha ${maybeBase} of pull_request event.`,
+      )
+      return { base: maybeBase, head }
+    }
+    const base = commits[0].parents[0].sha
     core.info(`Comparing base ${base} and head ${head} of the pull request: ${context.payload.pull_request.html_url}`)
-    return await matchChangedFiles(base, head, inputs, context)
+    return { base, head }
   }
   if ('before' in context.payload && 'after' in context.payload) {
     const before = context.payload.before
     const after = context.payload.after
     core.info(`Comparing before ${before} and after ${after} of the push event: ${context.payload.compare}`)
-    return await matchChangedFiles(before, after, inputs, context)
+    return { base: before, head: after }
   }
-  return await matchWorkingDirectory(inputs)
 }
 
 const matchChangedFiles = async (base: string, head: string, inputs: Inputs, context: Context): Promise<Outputs> => {

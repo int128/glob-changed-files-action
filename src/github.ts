@@ -1,6 +1,10 @@
 import assert from 'assert'
 import * as fs from 'fs/promises'
+import { Octokit } from '@octokit/action'
 import { WebhookEvent } from '@octokit/webhooks-types'
+import { retry } from '@octokit/plugin-retry'
+
+export const getOctokit = () => new (Octokit.plugin(retry))()
 
 export const getToken = (): string => {
   if (process.env['GITHUB_TOKEN']) {
