@@ -1,6 +1,6 @@
 import * as core from '@actions/core'
 import { run } from './run.js'
-import { getContext } from './github.js'
+import { getContext, getOctokit } from './github.js'
 
 const main = async (): Promise<void> => {
   if (core.getInput('outputs')) {
@@ -25,6 +25,7 @@ const main = async (): Promise<void> => {
       pathsFallback: core.getMultilineInput('paths-fallback'),
       transform: core.getMultilineInput('transform'),
     },
+    getOctokit(),
     await getContext(),
   )
   core.setOutput('paths', outputs.paths.join('\n'))
