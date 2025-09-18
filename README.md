@@ -4,11 +4,11 @@ This is an action to list the changed files of a pull request.
 
 ## Motivation
 
-This action is designed for a cross-cutting concern in a monorepo (mono-repository).
+This action is designed for testing a cross-cutting concern in a monorepo (mono-repository).
 For example,
 
 - Test the Kubernetes manifests
-- Test the security policies
+- Check the security policies
 
 It takes a long time to test all modules in a large monorepo.
 This action helps you reduce the number of modules to process by using the changed files.
