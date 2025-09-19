@@ -11,9 +11,10 @@ export const compareMergeCommit = async (merge: string, context: Context): Promi
       [
         'diff',
         '--name-only',
-        // The first parent of the merge commit, that is the base branch.
+        // The merge commit has two parents.
+        // The first parent is the base branch to be merged into.
+        // The second parent is the head commit.
         `${merge}^1`,
-        // This is a commit to be merged into the base branch.
         merge,
       ],
       { cwd },
