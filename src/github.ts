@@ -1,10 +1,6 @@
 import assert from 'assert'
 import * as fs from 'fs/promises'
-import { Octokit } from '@octokit/action'
 import { WebhookEvent } from '@octokit/webhooks-types'
-import { retry } from '@octokit/plugin-retry'
-
-export const getOctokit = () => new (Octokit.plugin(retry))()
 
 export const getToken = (): string => {
   if (process.env['GITHUB_TOKEN']) {
@@ -20,7 +16,7 @@ export type Context = {
     owner: string
     repo: string
   }
-  eventName: string
+  sha: string
   serverUrl: string
   workspace: string
   runnerTemp: string
@@ -31,7 +27,7 @@ export const getContext = async (): Promise<Context> => {
   // https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/store-information-in-variables#default-environment-variables
   return {
     repo: getRepo(),
-    eventName: getEnv('GITHUB_EVENT_NAME'),
+    sha: getEnv('GITHUB_SHA'),
     serverUrl: getEnv('GITHUB_SERVER_URL'),
     workspace: getEnv('GITHUB_WORKSPACE'),
     runnerTemp: getEnv('RUNNER_TEMP'),
