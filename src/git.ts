@@ -5,12 +5,26 @@ import { type Context, getToken } from './github.js'
 
 export const compareMergeCommit = async (merge: string, context: Context): Promise<string[]> => {
   return await withWorkspaceOrTemporaryDirectory(context, async (cwd) => {
-    await exec.exec('git', ['fetch', '--quiet', '--no-tags', '--depth=2', 'origin', merge], { cwd })
+    await exec.exec(
+      'git',
+      [
+        'fetch',
+        '--quiet',
+        '--no-tags',
+        // Fetch the merge commit and its first parent commit.
+        '--depth=2',
+        'origin',
+        merge,
+      ],
+      { cwd },
+    )
     const gitDiff = await exec.getExecOutput(
       'git',
       [
         'diff',
         '--name-only',
+        // Exclude the deleted files.
+        '--diff-filter=d',
         // The merge commit has two parents.
         // The first parent is the base branch to be merged into.
         // The second parent is the head commit.
@@ -25,8 +39,32 @@ export const compareMergeCommit = async (merge: string, context: Context): Promi
 
 export const compareTwoCommits = async (before: string, after: string, context: Context): Promise<string[]> => {
   return await withWorkspaceOrTemporaryDirectory(context, async (cwd) => {
-    await exec.exec('git', ['fetch', '--quiet', '--no-tags', '--depth=1', 'origin', before, after], { cwd })
-    const gitDiff = await exec.getExecOutput('git', ['diff', '--name-only', before, after], { cwd })
+    await exec.exec(
+      'git',
+      [
+        'fetch',
+        '--quiet',
+        '--no-tags',
+        // Fetch the before commit and after commit.
+        '--depth=1',
+        'origin',
+        before,
+        after,
+      ],
+      { cwd },
+    )
+    const gitDiff = await exec.getExecOutput(
+      'git',
+      [
+        'diff',
+        '--name-only',
+        // Exclude the deleted files.
+        '--diff-filter=d',
+        before,
+        after,
+      ],
+      { cwd },
+    )
     return gitDiff.stdout.trim().split('\n')
   })
 }
