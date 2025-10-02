@@ -1,9 +1,9 @@
+import * as stream from 'node:stream'
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 import * as git from './git.js'
+import type { Context } from './github.js'
 import * as match from './match.js'
-import * as stream from 'stream'
-import { Context } from './github.js'
 
 type Inputs = {
   paths: string[]

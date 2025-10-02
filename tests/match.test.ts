@@ -1,5 +1,5 @@
-import { it, expect, describe } from 'vitest'
-import { Match, VariableMap, matchGroups, transform } from '../src/match.js'
+import { describe, expect, it } from 'vitest'
+import { type Match, matchGroups, transform, type VariableMap } from '../src/match.js'
 
 describe('matchGroups', () => {
   describe('basic path variable extraction', () => {
