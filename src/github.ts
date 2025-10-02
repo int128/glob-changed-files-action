@@ -1,12 +1,12 @@
-import assert from 'assert'
-import * as fs from 'fs/promises'
-import { WebhookEvent } from '@octokit/webhooks-types'
+import assert from 'node:assert'
+import * as fs from 'node:fs/promises'
+import type { WebhookEvent } from '@octokit/webhooks-types'
 
 export const getToken = (): string => {
-  if (process.env['GITHUB_TOKEN']) {
-    return process.env['GITHUB_TOKEN']
-  } else if (process.env['INPUT_TOKEN']) {
-    return process.env['INPUT_TOKEN']
+  if (process.env.GITHUB_TOKEN) {
+    return process.env.GITHUB_TOKEN
+  } else if (process.env.INPUT_TOKEN) {
+    return process.env.INPUT_TOKEN
   }
   throw new Error('GITHUB_TOKEN or INPUT_TOKEN is required')
 }

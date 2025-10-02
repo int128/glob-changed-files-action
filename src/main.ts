@@ -1,6 +1,6 @@
 import * as core from '@actions/core'
-import { run } from './run.js'
 import { getContext } from './github.js'
+import { run } from './run.js'
 
 const main = async (): Promise<void> => {
   if (core.getInput('outputs')) {

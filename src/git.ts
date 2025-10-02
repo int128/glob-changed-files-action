@@ -1,7 +1,7 @@
+import * as fs from 'node:fs/promises'
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
-import * as fs from 'fs/promises'
-import { Context, getToken } from './github.js'
+import { type Context, getToken } from './github.js'
 
 export const compareMergeCommit = async (merge: string, context: Context): Promise<string[]> => {
   return await withWorkspaceOrTemporaryDirectory(context, async (cwd) => {
