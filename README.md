@@ -38,8 +38,10 @@ jobs:
 
 This action determines the changed files as follows:
 
-- For `pull_request` or `pull_request_target` events, it compares the base commit and head commit of the pull request.
+- For `pull_request` or `pull_request_target` events, it compares the base branch and head branch of the pull request.
+  It excludes the deleted files.
 - For `push` events, it compares the before commit and after commit.
+  It excludes the deleted files.
 - Otherwise, it falls back to the working directory files.
 
 You can exclude files from the path patterns by using the `!` prefix.
