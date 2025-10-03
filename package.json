@@ -18,12 +18,12 @@
     "@types/node": "20.19.17",
     "@vercel/ncc": "0.38.4",
     "js-yaml": "4.1.0",
-    "pnpm": "10.16.0",
+    "pnpm": "10.17.1",
     "typescript": "5.9.2",
     "vitest": "3.2.4"
   },
   "engines": {
     "node": "20.x"
   },
-  "packageManager": "pnpm@10.16.0"
+  "packageManager": "pnpm@10.17.1"
 }
