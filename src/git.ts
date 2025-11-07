@@ -4,6 +4,7 @@ import * as exec from '@actions/exec'
 import { type Context, getToken } from './github.js'
 
 export const compareMergeCommit = async (merge: string, context: Context): Promise<string[]> => {
+  core.info(`merge commit: ${merge}`)
   return await withWorkspaceOrTemporaryDirectory(context, async (cwd) => {
     await exec.exec(
       'git',
@@ -38,6 +39,8 @@ export const compareMergeCommit = async (merge: string, context: Context): Promi
 }
 
 export const compareTwoCommits = async (before: string, after: string, context: Context): Promise<string[]> => {
+  core.info(`before commit: ${before}`)
+  core.info(`after commit: ${after}`)
   return await withWorkspaceOrTemporaryDirectory(context, async (cwd) => {
     await exec.exec(
       'git',

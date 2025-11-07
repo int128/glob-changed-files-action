@@ -27,6 +27,11 @@ const main = async (): Promise<void> => {
     },
     await getContext(),
   )
+  core.startGroup(`${outputs.paths.length} paths matched`)
+  for (const path of outputs.paths) {
+    core.info(path)
+  }
+  core.endGroup()
   core.setOutput('paths', outputs.paths.join('\n'))
   core.setOutput('paths-json', outputs.paths)
 }

@@ -17,46 +17,35 @@ type Outputs = {
 
 export const run = async (inputs: Inputs, context: Context): Promise<Outputs> => {
   if ('pull_request' in context.payload) {
-    core.info(`Comparing merge commit ${context.sha} of the pull request: ${context.payload.pull_request.html_url}`)
+    core.startGroup(`Comparing the base branch and merge commit of the pull request`)
     const changedFiles = await git.compareMergeCommit(context.sha, context)
-    core.info(`Found ${changedFiles.length} changed files in the pull request`)
+    core.endGroup()
+    core.info(`${changedFiles.length} files changed`)
     return await matchChangedFiles(changedFiles, inputs)
   }
 
   if ('before' in context.payload && 'after' in context.payload) {
-    const before = context.payload.before
-    const after = context.payload.after
-    core.info(`Comparing before ${before} and after ${after} of the push event: ${context.payload.compare}`)
-    const changedFiles = await git.compareTwoCommits(before, after, context)
-    core.info(`Found ${changedFiles.length} changed files in the push event`)
+    core.startGroup(`Comparing the before and after commits of the push event`)
+    const changedFiles = await git.compareTwoCommits(context.payload.before, context.payload.after, context)
+    core.endGroup()
+    core.info(`${changedFiles.length} files changed`)
     return await matchChangedFiles(changedFiles, inputs)
   }
 
-  return await matchWorkingDirectory(inputs)
+  return await matchWorkingDirectoryFiles(inputs)
 }
 
 const matchChangedFiles = async (changedFiles: string[], inputs: Inputs): Promise<Outputs> => {
   if (match.matchGroups(inputs.pathsFallback, changedFiles).paths.length > 0) {
-    core.info(`Fallback due to paths-fallback matches to the changed files`)
-    return await matchWorkingDirectory(inputs)
+    core.info(`paths-fallback matched to the changed files`)
+    return await matchWorkingDirectoryFiles(inputs)
   }
-
-  const matchResult = match.matchGroups(inputs.paths, changedFiles)
-  core.info(`Transform paths by the changed files`)
-  if (inputs.transform.length > 0) {
-    const transformedPaths = inputs.transform.flatMap((pattern) => match.transform(pattern, matchResult.variableMaps))
-    return {
-      paths: transformedPaths,
-    }
-  }
-  return {
-    paths: matchResult.paths,
-  }
+  return matchFiles(changedFiles, inputs)
 }
 
-const matchWorkingDirectory = async (inputs: Inputs): Promise<Outputs> => {
-  core.info(`Finding the working directory files`)
+const matchWorkingDirectoryFiles = async (inputs: Inputs): Promise<Outputs> => {
   const gitLsFiles = await exec.getExecOutput('git', ['ls-files'], {
+    // Suppress output to avoid large logs
     outStream: new stream.PassThrough(),
     ignoreReturnCode: true,
   })
@@ -67,11 +56,22 @@ const matchWorkingDirectory = async (inputs: Inputs): Promise<Outputs> => {
     }
   }
   const workingDirectoryFiles = gitLsFiles.stdout.trim().split('\n')
-  core.info(`Found ${workingDirectoryFiles.length} files in the working directory`)
+  core.info(`${workingDirectoryFiles.length} files in the working directory`)
 
-  const matchResult = match.matchGroups(inputs.paths, workingDirectoryFiles)
-  core.info(`Transform paths by the working directory files`)
+  return matchFiles(workingDirectoryFiles, inputs)
+}
+
+const matchFiles = (files: string[], inputs: Inputs): Outputs => {
+  const matchResult = match.matchGroups(inputs.paths, files)
   if (inputs.transform.length > 0) {
+    core.info(`Transforming ${inputs.transform.length} patterns:`)
+    for (const pattern of inputs.transform) {
+      core.info(`- ${pattern}`)
+    }
+    core.info(`with ${matchResult.variableMaps.length} variable maps:`)
+    for (const variableMap of matchResult.variableMaps) {
+      core.info(`- ${JSON.stringify(variableMap)}`)
+    }
     const transformedPaths = inputs.transform.flatMap((pattern) => match.transform(pattern, matchResult.variableMaps))
     return {
       paths: transformedPaths,
