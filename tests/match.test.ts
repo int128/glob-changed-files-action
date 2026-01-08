@@ -77,21 +77,14 @@ describe('matchGroups', () => {
       const match = matchGroups(
         ['::directory/*'],
         [
-          'clusters/staging/cluster-autoscaler/helmfile.yaml',
-          'clusters/staging/cluster-autoscaler/values.yaml',
+          'helmfile.yaml', // should not match
+          'components/cluster-autoscaler/values.yaml',
           'clusters/production/coredns/deployment.yaml',
         ],
       )
       expect(match).toEqual<Match>({
-        paths: [
-          'clusters/staging/cluster-autoscaler/helmfile.yaml',
-          'clusters/staging/cluster-autoscaler/values.yaml',
-          'clusters/production/coredns/deployment.yaml',
-        ],
-        variableMaps: [
-          { directory: 'clusters/staging/cluster-autoscaler' },
-          { directory: 'clusters/production/coredns' },
-        ],
+        paths: ['components/cluster-autoscaler/values.yaml', 'clusters/production/coredns/deployment.yaml'],
+        variableMaps: [{ directory: 'components/cluster-autoscaler' }, { directory: 'clusters/production/coredns' }],
       })
     })
 
@@ -99,41 +92,29 @@ describe('matchGroups', () => {
       const match = matchGroups(
         ['clusters/::directory/*'],
         [
-          'clusters/staging/cluster-autoscaler/helmfile.yaml',
-          'clusters/staging/cluster-autoscaler/values.yaml',
+          'clusters/helmfile.yaml', // should not match
+          'clusters/components/config.yaml',
           'clusters/production/coredns/deployment.yaml',
         ],
       )
       expect(match).toEqual<Match>({
-        paths: [
-          'clusters/staging/cluster-autoscaler/helmfile.yaml',
-          'clusters/staging/cluster-autoscaler/values.yaml',
-          'clusters/production/coredns/deployment.yaml',
-        ],
-        variableMaps: [{ directory: 'staging/cluster-autoscaler' }, { directory: 'production/coredns' }],
+        paths: ['clusters/components/config.yaml', 'clusters/production/coredns/deployment.yaml'],
+        variableMaps: [{ directory: 'components' }, { directory: 'production/coredns' }],
       })
     })
 
     it('extracts a path variable at last', () => {
       const match = matchGroups(
-        ['clusters/::path'],
+        ['components/::path'],
         [
-          'clusters/staging/cluster-autoscaler/helmfile.yaml',
-          'clusters/staging/cluster-autoscaler/values.yaml',
-          'clusters/production/coredns/deployment.yaml',
+          'components', // should not match
+          'components/cluster-autoscaler/values.yaml',
+          'components/production/coredns/deployment.yaml',
         ],
       )
       expect(match).toEqual<Match>({
-        paths: [
-          'clusters/staging/cluster-autoscaler/helmfile.yaml',
-          'clusters/staging/cluster-autoscaler/values.yaml',
-          'clusters/production/coredns/deployment.yaml',
-        ],
-        variableMaps: [
-          { path: 'staging/cluster-autoscaler/helmfile.yaml' },
-          { path: 'staging/cluster-autoscaler/values.yaml' },
-          { path: 'production/coredns/deployment.yaml' },
-        ],
+        paths: ['components/cluster-autoscaler/values.yaml', 'components/production/coredns/deployment.yaml'],
+        variableMaps: [{ path: 'cluster-autoscaler/values.yaml' }, { path: 'production/coredns/deployment.yaml' }],
       })
     })
   })
