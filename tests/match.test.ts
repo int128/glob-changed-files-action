@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { type Match, matchGroups, transform, type VariableMap } from '../src/match.js'
 
 describe('matchGroups', () => {
-  describe('basic path variable extraction', () => {
+  describe('path variable of single colon', () => {
     it('extracts path variables from matched files', () => {
       const match = matchGroups(
         ['clusters/:cluster/:component/**'],
@@ -67,6 +67,72 @@ describe('matchGroups', () => {
             cluster: 'staging',
             component: 'app',
           },
+        ],
+      })
+    })
+  })
+
+  describe('path variable of double colon', () => {
+    it('extracts a path variable at head', () => {
+      const match = matchGroups(
+        ['::directory/*'],
+        [
+          'clusters/staging/cluster-autoscaler/helmfile.yaml',
+          'clusters/staging/cluster-autoscaler/values.yaml',
+          'clusters/production/coredns/deployment.yaml',
+        ],
+      )
+      expect(match).toEqual<Match>({
+        paths: [
+          'clusters/staging/cluster-autoscaler/helmfile.yaml',
+          'clusters/staging/cluster-autoscaler/values.yaml',
+          'clusters/production/coredns/deployment.yaml',
+        ],
+        variableMaps: [
+          { directory: 'clusters/staging/cluster-autoscaler' },
+          { directory: 'clusters/production/coredns' },
+        ],
+      })
+    })
+
+    it('extracts a path variable at middle', () => {
+      const match = matchGroups(
+        ['clusters/::directory/*'],
+        [
+          'clusters/staging/cluster-autoscaler/helmfile.yaml',
+          'clusters/staging/cluster-autoscaler/values.yaml',
+          'clusters/production/coredns/deployment.yaml',
+        ],
+      )
+      expect(match).toEqual<Match>({
+        paths: [
+          'clusters/staging/cluster-autoscaler/helmfile.yaml',
+          'clusters/staging/cluster-autoscaler/values.yaml',
+          'clusters/production/coredns/deployment.yaml',
+        ],
+        variableMaps: [{ directory: 'staging/cluster-autoscaler' }, { directory: 'production/coredns' }],
+      })
+    })
+
+    it('extracts a path variable at last', () => {
+      const match = matchGroups(
+        ['clusters/::path'],
+        [
+          'clusters/staging/cluster-autoscaler/helmfile.yaml',
+          'clusters/staging/cluster-autoscaler/values.yaml',
+          'clusters/production/coredns/deployment.yaml',
+        ],
+      )
+      expect(match).toEqual<Match>({
+        paths: [
+          'clusters/staging/cluster-autoscaler/helmfile.yaml',
+          'clusters/staging/cluster-autoscaler/values.yaml',
+          'clusters/production/coredns/deployment.yaml',
+        ],
+        variableMaps: [
+          { path: 'staging/cluster-autoscaler/helmfile.yaml' },
+          { path: 'staging/cluster-autoscaler/values.yaml' },
+          { path: 'production/coredns/deployment.yaml' },
         ],
       })
     })

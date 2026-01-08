@@ -73,7 +73,9 @@ const compilePattern = (pattern: string): RegExp => {
   if (regexp === false) {
     return new RegExp(pattern)
   }
-  const escapePathVariables = regexp.source.replaceAll(/:([a-zA-Z0-9]+)/g, '(?<$1>[^/]+)')
+  const escapePathVariables = regexp.source
+    .replaceAll(/::([a-zA-Z0-9]+)/g, '(?<$1>.+?)')
+    .replaceAll(/:([a-zA-Z0-9]+)/g, '(?<$1>[^/]+)')
   return new RegExp(escapePathVariables)
 }
 

@@ -193,8 +193,7 @@ jobs:
 
 Path variables are available in the path patterns of `paths` and `transform`.
 
-A path variable can be defined by `:VARIABLE`.
-It starts with a colon `:`, and contains only alphanumeric characters.
+It evaluates a path variable of single colon `:VARIABLE` as a wildcard `*`.
 For example,
 
 ```yaml
@@ -205,6 +204,20 @@ For example,
     transform: |
       :workflow
 ```
+
+It evaluates a path variable of double colon `::VARIABLE` as a globstar `**`.
+For example,
+
+```yaml
+- uses: int128/glob-changed-files-action@v2
+  with:
+    paths: |
+      ::directory/*
+    transform: |
+      ::directory
+```
+
+A variable name must consist of alphanumeric characters.
 
 ### Inputs
 
