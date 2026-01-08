@@ -338,7 +338,7 @@ describe('matchGroups', () => {
 })
 
 describe('transform', () => {
-  it('returns paths corresponding to groups', () => {
+  it('replaces path variables', () => {
     const variableMaps: VariableMap[] = [
       {
         cluster: 'staging',
@@ -350,6 +350,22 @@ describe('transform', () => {
       },
     ]
     const paths = transform('clusters/:cluster/:component/kustomization.yaml', variableMaps)
+    expect(paths).toStrictEqual([
+      'clusters/staging/cluster-autoscaler/kustomization.yaml',
+      'clusters/production/coredns/kustomization.yaml',
+    ])
+  })
+
+  it('replaces path variables with double colon', () => {
+    const variableMaps: VariableMap[] = [
+      {
+        directory: 'staging/cluster-autoscaler',
+      },
+      {
+        directory: 'production/coredns',
+      },
+    ]
+    const paths = transform('clusters/::directory/kustomization.yaml', variableMaps)
     expect(paths).toStrictEqual([
       'clusters/staging/cluster-autoscaler/kustomization.yaml',
       'clusters/production/coredns/kustomization.yaml',
