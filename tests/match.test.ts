@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { type Match, matchGroups, transform, type VariableMap } from '../src/match.js'
 
 describe('matchGroups', () => {
-  describe('basic path variable extraction', () => {
+  describe('path variable of single colon', () => {
     it('extracts path variables from matched files', () => {
       const match = matchGroups(
         ['clusters/:cluster/:component/**'],
@@ -68,6 +68,53 @@ describe('matchGroups', () => {
             component: 'app',
           },
         ],
+      })
+    })
+  })
+
+  describe('path variable of double colon', () => {
+    it('extracts a path variable at head', () => {
+      const match = matchGroups(
+        ['::directory/*'],
+        [
+          'helmfile.yaml', // should not match
+          'components/cluster-autoscaler/values.yaml',
+          'clusters/production/coredns/deployment.yaml',
+        ],
+      )
+      expect(match).toEqual<Match>({
+        paths: ['components/cluster-autoscaler/values.yaml', 'clusters/production/coredns/deployment.yaml'],
+        variableMaps: [{ directory: 'components/cluster-autoscaler' }, { directory: 'clusters/production/coredns' }],
+      })
+    })
+
+    it('extracts a path variable at middle', () => {
+      const match = matchGroups(
+        ['clusters/::directory/*'],
+        [
+          'clusters/helmfile.yaml', // should not match
+          'clusters/components/config.yaml',
+          'clusters/production/coredns/deployment.yaml',
+        ],
+      )
+      expect(match).toEqual<Match>({
+        paths: ['clusters/components/config.yaml', 'clusters/production/coredns/deployment.yaml'],
+        variableMaps: [{ directory: 'components' }, { directory: 'production/coredns' }],
+      })
+    })
+
+    it('extracts a path variable at last', () => {
+      const match = matchGroups(
+        ['components/::path'],
+        [
+          'components', // should not match
+          'components/cluster-autoscaler/values.yaml',
+          'components/production/coredns/deployment.yaml',
+        ],
+      )
+      expect(match).toEqual<Match>({
+        paths: ['components/cluster-autoscaler/values.yaml', 'components/production/coredns/deployment.yaml'],
+        variableMaps: [{ path: 'cluster-autoscaler/values.yaml' }, { path: 'production/coredns/deployment.yaml' }],
       })
     })
   })
@@ -272,7 +319,7 @@ describe('matchGroups', () => {
 })
 
 describe('transform', () => {
-  it('returns paths corresponding to groups', () => {
+  it('replaces path variables', () => {
     const variableMaps: VariableMap[] = [
       {
         cluster: 'staging',
@@ -284,6 +331,22 @@ describe('transform', () => {
       },
     ]
     const paths = transform('clusters/:cluster/:component/kustomization.yaml', variableMaps)
+    expect(paths).toStrictEqual([
+      'clusters/staging/cluster-autoscaler/kustomization.yaml',
+      'clusters/production/coredns/kustomization.yaml',
+    ])
+  })
+
+  it('replaces path variables with double colon', () => {
+    const variableMaps: VariableMap[] = [
+      {
+        directory: 'staging/cluster-autoscaler',
+      },
+      {
+        directory: 'production/coredns',
+      },
+    ]
+    const paths = transform('clusters/::directory/kustomization.yaml', variableMaps)
     expect(paths).toStrictEqual([
       'clusters/staging/cluster-autoscaler/kustomization.yaml',
       'clusters/production/coredns/kustomization.yaml',

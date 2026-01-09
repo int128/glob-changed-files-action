@@ -73,15 +73,17 @@ const compilePattern = (pattern: string): RegExp => {
   if (regexp === false) {
     return new RegExp(pattern)
   }
-  const escapePathVariables = regexp.source.replaceAll(/:([a-zA-Z0-9]+)/g, '(?<$1>[^/]+)')
-  return new RegExp(escapePathVariables)
+  const regexpWithPathVariables = regexp.source
+    .replaceAll(/::([a-zA-Z0-9]+)/g, '(?<$1>.+?)')
+    .replaceAll(/:([a-zA-Z0-9]+)/g, '(?<$1>[^/]+)')
+  return new RegExp(regexpWithPathVariables)
 }
 
 export const transform = (pattern: string, variableMaps: VariableMap[]): string[] => {
   const transformedPaths = new Set<string>()
   for (const variableMap of variableMaps) {
     let anyUndefinedVariable = false
-    const transformedPath = pattern.replaceAll(/:([a-zA-Z0-9]+)/g, (_, variableKey: string): string => {
+    const transformedPath = pattern.replaceAll(/::?([a-zA-Z0-9]+)/g, (_, variableKey: string): string => {
       const variableValue = variableMap[variableKey]
       if (variableValue === undefined) {
         anyUndefinedVariable = true
