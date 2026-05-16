@@ -20,5 +20,5 @@ outputs:
   paths-json:
     description: List of the changed files (JSON)
 runs:
-  using: 'node20'
+  using: 'node24'
   main: 'dist/index.js'
