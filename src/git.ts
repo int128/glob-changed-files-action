@@ -3,27 +3,19 @@ import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 import { type Context, getToken } from './github.js'
 
-export type CompareFilter = {
+export type DiffFilter = {
   added: boolean
   modified: boolean
   deleted: boolean
+  // Currently not supported to keep the specification simple.
+  // renamed (R)
+  // copied (C)
 }
 
-const diffFilterFlag = (filter: CompareFilter): string => {
-  let flag = ''
-  if (filter.added) {
-    flag += 'A'
-  }
-  if (filter.modified) {
-    flag += 'M'
-  }
-  if (filter.deleted) {
-    flag += 'D'
-  }
-  return flag
-}
+const diffFilterFlagValue = (filter: DiffFilter): string =>
+  [filter.added ? 'A' : '', filter.modified ? 'M' : '', filter.deleted ? 'D' : ''].join('')
 
-export const compareMergeCommit = async (merge: string, filter: CompareFilter, context: Context): Promise<string[]> => {
+export const compareMergeCommit = async (merge: string, filter: DiffFilter, context: Context): Promise<string[]> => {
   core.info(`merge commit: ${merge}`)
   return await withWorkspaceOrTemporaryDirectory(context, async (cwd) => {
     await exec.exec(
@@ -44,7 +36,7 @@ export const compareMergeCommit = async (merge: string, filter: CompareFilter, c
       [
         'diff',
         '--name-only',
-        `--diff-filter=${diffFilterFlag(filter)}`,
+        `--diff-filter=${diffFilterFlagValue(filter)}`,
         // The merge commit has two parents.
         // The first parent is the base branch to be merged into.
         // The second parent is the head commit.
@@ -60,7 +52,7 @@ export const compareMergeCommit = async (merge: string, filter: CompareFilter, c
 export const compareTwoCommits = async (
   before: string,
   after: string,
-  filter: CompareFilter,
+  filter: DiffFilter,
   context: Context,
 ): Promise<string[]> => {
   core.info(`before commit: ${before}`)
@@ -82,7 +74,7 @@ export const compareTwoCommits = async (
     )
     const gitDiff = await exec.getExecOutput(
       'git',
-      ['diff', '--name-only', `--diff-filter=${diffFilterFlag(filter)}`, before, after],
+      ['diff', '--name-only', `--diff-filter=${diffFilterFlagValue(filter)}`, before, after],
       {
         cwd,
       },

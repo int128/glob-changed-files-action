@@ -17,12 +17,11 @@ type Outputs = {
 }
 
 export const run = async (inputs: Inputs, context: Context): Promise<Outputs> => {
-  const filter = parseTypes(inputs.types)
-  core.info(`Filter: ${JSON.stringify(filter)}`)
+  const diffFilter = parseTypes(inputs.types)
 
   if ('pull_request' in context.payload) {
     core.startGroup(`Comparing the base branch and merge commit of the pull request`)
-    const changedFiles = await git.compareMergeCommit(context.sha, filter, context)
+    const changedFiles = await git.compareMergeCommit(context.sha, diffFilter, context)
     core.endGroup()
     core.info(`${changedFiles.length} files changed`)
     return await matchChangedFiles(changedFiles, inputs)
@@ -30,7 +29,7 @@ export const run = async (inputs: Inputs, context: Context): Promise<Outputs> =>
 
   if ('before' in context.payload && 'after' in context.payload) {
     core.startGroup(`Comparing the before and after commits of the push event`)
-    const changedFiles = await git.compareTwoCommits(context.payload.before, context.payload.after, filter, context)
+    const changedFiles = await git.compareTwoCommits(context.payload.before, context.payload.after, diffFilter, context)
     core.endGroup()
     core.info(`${changedFiles.length} files changed`)
     return await matchChangedFiles(changedFiles, inputs)
@@ -39,8 +38,8 @@ export const run = async (inputs: Inputs, context: Context): Promise<Outputs> =>
   return await matchWorkingDirectoryFiles(inputs)
 }
 
-export const parseTypes = (types: string[]): git.CompareFilter => {
-  const filter: git.CompareFilter = {
+export const parseTypes = (types: string[]): git.DiffFilter => {
+  const filter: git.DiffFilter = {
     added: false,
     modified: false,
     deleted: false,

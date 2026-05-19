@@ -39,9 +39,7 @@ jobs:
 This action determines the changed files as follows:
 
 - For `pull_request` or `pull_request_target` events, it compares the base branch and head branch of the pull request.
-  It excludes the deleted files.
 - For `push` events, it compares the before commit and after commit.
-  It excludes the deleted files.
 - Otherwise, it falls back to the working directory files.
 
 You can exclude files from the path patterns by using the `!` prefix.
@@ -58,6 +56,8 @@ jobs:
             **/kustomization.yaml
             !**/*.md
 ```
+
+This action returns the added or modified files by default.
 
 You can filter the changed files by the types of `added`, `modified`, and `deleted`.
 For example, this workflow lists only the added files.
