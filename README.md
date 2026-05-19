@@ -39,9 +39,7 @@ jobs:
 This action determines the changed files as follows:
 
 - For `pull_request` or `pull_request_target` events, it compares the base branch and head branch of the pull request.
-  It excludes the deleted files.
 - For `push` events, it compares the before commit and after commit.
-  It excludes the deleted files.
 - Otherwise, it falls back to the working directory files.
 
 You can exclude files from the path patterns by using the `!` prefix.
@@ -57,6 +55,24 @@ jobs:
           paths: |
             **/kustomization.yaml
             !**/*.md
+```
+
+This action returns the added or modified files by default.
+
+You can filter the changed files by the types of `added`, `modified`, and `deleted`.
+For example, this workflow lists only the added files.
+
+```yaml
+jobs:
+  test:
+    steps:
+      - id: glob-changed-files
+        uses: int128/glob-changed-files-action@v2
+        with:
+          paths: |
+            **/kustomization.yaml
+          types: |
+            added
 ```
 
 ### Transform the path patterns
@@ -221,12 +237,13 @@ A variable name must consist of alphanumeric characters.
 
 ### Inputs
 
-| Name             | Default        | Description                            |
-| ---------------- | -------------- | -------------------------------------- |
-| `paths`          | (required)     | Glob patterns (multiline)              |
-| `paths-fallback` | -              | Glob patterns to fallback (multiline)  |
-| `transform`      | -              | Paths to transform (multiline)         |
-| `token`          | `github.token` | GitHub token to list the changed files |
+| Name             | Default         | Description                                                          |
+| ---------------- | --------------- | -------------------------------------------------------------------- |
+| `paths`          | (required)      | Glob patterns (multiline)                                            |
+| `paths-fallback` | -               | Glob patterns to fallback (multiline)                                |
+| `types`          | added, modified | Change types. Possible values are `added`, `modified` and `deleted`. |
+| `transform`      | -               | Paths to transform (multiline)                                       |
+| `token`          | `github.token`  | GitHub token to list the changed files                               |
 
 ### Outputs
 

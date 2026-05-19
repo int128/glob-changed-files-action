@@ -7,6 +7,12 @@ inputs:
   paths-fallback:
     description: Glob patterns to fallback (multiline)
     required: false
+  types:
+    description: Change types. Possible values are `added`, `modified` and `deleted` (multiline)
+    required: true
+    default: |
+      added
+      modified
   transform:
     description: Paths to transform (multiline)
     required: false

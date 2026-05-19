@@ -8,6 +8,7 @@ import * as match from './match.js'
 type Inputs = {
   paths: string[]
   pathsFallback: string[]
+  types: string[]
   transform: string[]
 }
 
@@ -16,9 +17,11 @@ type Outputs = {
 }
 
 export const run = async (inputs: Inputs, context: Context): Promise<Outputs> => {
+  const diffFilter = parseTypes(inputs.types)
+
   if ('pull_request' in context.payload) {
     core.startGroup(`Comparing the base branch and merge commit of the pull request`)
-    const changedFiles = await git.compareMergeCommit(context.sha, context)
+    const changedFiles = await git.compareMergeCommit(context.sha, diffFilter, context)
     core.endGroup()
     core.info(`${changedFiles.length} files changed`)
     return await matchChangedFiles(changedFiles, inputs)
@@ -26,13 +29,33 @@ export const run = async (inputs: Inputs, context: Context): Promise<Outputs> =>
 
   if ('before' in context.payload && 'after' in context.payload) {
     core.startGroup(`Comparing the before and after commits of the push event`)
-    const changedFiles = await git.compareTwoCommits(context.payload.before, context.payload.after, context)
+    const changedFiles = await git.compareTwoCommits(context.payload.before, context.payload.after, diffFilter, context)
     core.endGroup()
     core.info(`${changedFiles.length} files changed`)
     return await matchChangedFiles(changedFiles, inputs)
   }
 
   return await matchWorkingDirectoryFiles(inputs)
+}
+
+export const parseTypes = (types: string[]): git.DiffFilter => {
+  const filter: git.DiffFilter = {
+    added: false,
+    modified: false,
+    deleted: false,
+  }
+  for (const type of types) {
+    if (type === 'added') {
+      filter.added = true
+    } else if (type === 'modified') {
+      filter.modified = true
+    } else if (type === 'deleted') {
+      filter.deleted = true
+    } else {
+      throw new Error(`Invalid type: ${type}. Possible values are 'added', 'modified' and 'deleted'.`)
+    }
+  }
+  return filter
 }
 
 const matchChangedFiles = async (changedFiles: string[], inputs: Inputs): Promise<Outputs> => {

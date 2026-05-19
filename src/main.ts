@@ -23,6 +23,7 @@ const main = async (): Promise<void> => {
     {
       paths: core.getMultilineInput('paths', { required: true }),
       pathsFallback: core.getMultilineInput('paths-fallback'),
+      types: core.getMultilineInput('types', { required: true }),
       transform: core.getMultilineInput('transform'),
     },
     await getContext(),
