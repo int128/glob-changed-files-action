@@ -18,6 +18,7 @@ type Outputs = {
 
 export const run = async (inputs: Inputs, context: Context): Promise<Outputs> => {
   const filter = parseTypes(inputs.types)
+  core.info(`Filter: ${JSON.stringify(filter)}`)
 
   if ('pull_request' in context.payload) {
     core.startGroup(`Comparing the base branch and merge commit of the pull request`)
@@ -38,7 +39,7 @@ export const run = async (inputs: Inputs, context: Context): Promise<Outputs> =>
   return await matchWorkingDirectoryFiles(inputs)
 }
 
-const parseTypes = (types: string[]): git.CompareFilter => {
+export const parseTypes = (types: string[]): git.CompareFilter => {
   const filter: git.CompareFilter = {
     added: false,
     modified: false,
