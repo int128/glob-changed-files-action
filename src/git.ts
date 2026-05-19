@@ -3,7 +3,27 @@ import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 import { type Context, getToken } from './github.js'
 
-export const compareMergeCommit = async (merge: string, context: Context): Promise<string[]> => {
+export type CompareFilter = {
+  added: boolean
+  modified: boolean
+  deleted: boolean
+}
+
+const diffFilterFlag = (filter: CompareFilter): string => {
+  let flag = ''
+  if (filter.added) {
+    flag += 'A'
+  }
+  if (filter.modified) {
+    flag += 'M'
+  }
+  if (filter.deleted) {
+    flag += 'D'
+  }
+  return flag
+}
+
+export const compareMergeCommit = async (merge: string, filter: CompareFilter, context: Context): Promise<string[]> => {
   core.info(`merge commit: ${merge}`)
   return await withWorkspaceOrTemporaryDirectory(context, async (cwd) => {
     await exec.exec(
@@ -24,8 +44,7 @@ export const compareMergeCommit = async (merge: string, context: Context): Promi
       [
         'diff',
         '--name-only',
-        // Exclude the deleted files.
-        '--diff-filter=d',
+        `--diff-filter=${diffFilterFlag(filter)}`,
         // The merge commit has two parents.
         // The first parent is the base branch to be merged into.
         // The second parent is the head commit.
@@ -38,7 +57,12 @@ export const compareMergeCommit = async (merge: string, context: Context): Promi
   })
 }
 
-export const compareTwoCommits = async (before: string, after: string, context: Context): Promise<string[]> => {
+export const compareTwoCommits = async (
+  before: string,
+  after: string,
+  filter: CompareFilter,
+  context: Context,
+): Promise<string[]> => {
   core.info(`before commit: ${before}`)
   core.info(`after commit: ${after}`)
   return await withWorkspaceOrTemporaryDirectory(context, async (cwd) => {
@@ -58,15 +82,10 @@ export const compareTwoCommits = async (before: string, after: string, context: 
     )
     const gitDiff = await exec.getExecOutput(
       'git',
-      [
-        'diff',
-        '--name-only',
-        // Exclude the deleted files.
-        '--diff-filter=d',
-        before,
-        after,
-      ],
-      { cwd },
+      ['diff', '--name-only', `--diff-filter=${diffFilterFlag(filter)}`, before, after],
+      {
+        cwd,
+      },
     )
     return gitDiff.stdout.trim().split('\n')
   })

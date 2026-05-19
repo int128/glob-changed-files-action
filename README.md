@@ -59,6 +59,22 @@ jobs:
             !**/*.md
 ```
 
+You can filter the changed files by the types of `added`, `modified`, and `deleted`.
+For example, this workflow lists only the added files.
+
+```yaml
+jobs:
+  test:
+    steps:
+      - id: glob-changed-files
+        uses: int128/glob-changed-files-action@v2
+        with:
+          paths: |
+            **/kustomization.yaml
+          types: |
+            added
+```
+
 ### Transform the path patterns
 
 Here is an example directory structure for Kubernetes components.
@@ -221,12 +237,13 @@ A variable name must consist of alphanumeric characters.
 
 ### Inputs
 
-| Name             | Default        | Description                            |
-| ---------------- | -------------- | -------------------------------------- |
-| `paths`          | (required)     | Glob patterns (multiline)              |
-| `paths-fallback` | -              | Glob patterns to fallback (multiline)  |
-| `transform`      | -              | Paths to transform (multiline)         |
-| `token`          | `github.token` | GitHub token to list the changed files |
+| Name             | Default         | Description                                                          |
+| ---------------- | --------------- | -------------------------------------------------------------------- |
+| `paths`          | (required)      | Glob patterns (multiline)                                            |
+| `paths-fallback` | -               | Glob patterns to fallback (multiline)                                |
+| `types`          | added, modified | Change types. Possible values are `added`, `modified` and `deleted`. |
+| `transform`      | -               | Paths to transform (multiline)                                       |
+| `token`          | `github.token`  | GitHub token to list the changed files                               |
 
 ### Outputs
 
