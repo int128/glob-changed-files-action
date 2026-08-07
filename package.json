@@ -9,7 +9,7 @@
   "dependencies": {
     "@actions/core": "3.0.1",
     "@actions/exec": "3.0.0",
-    "minimatch": "10.2.5"
+    "minimatch": "10.2.6"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.6",
