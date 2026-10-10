@@ -35,6 +35,7 @@ export const compareMergeCommit = async (merge: string, filter: DiffFilter, cont
     await exec.exec(
       'git',
       [
+        ...gitTokenConfigFlags(context),
         'fetch',
         '--quiet',
         '--no-tags',
@@ -43,7 +44,13 @@ export const compareMergeCommit = async (merge: string, filter: DiffFilter, cont
         'origin',
         merge,
       ],
-      { cwd },
+      {
+        cwd,
+        env: {
+          ...process.env,
+          CONFIG_VALUE_AUTHORIZATION_HEADER: authorizationHeader(),
+        },
+      },
     )
     const gitDiff = await exec.getExecOutput(
       'git',
@@ -75,6 +82,7 @@ export const compareTwoCommits = async (
     await exec.exec(
       'git',
       [
+        ...gitTokenConfigFlags(context),
         'fetch',
         '--quiet',
         '--no-tags',
@@ -84,14 +92,18 @@ export const compareTwoCommits = async (
         before,
         after,
       ],
-      { cwd },
+      {
+        cwd,
+        env: {
+          ...process.env,
+          CONFIG_VALUE_AUTHORIZATION_HEADER: authorizationHeader(),
+        },
+      },
     )
     const gitDiff = await exec.getExecOutput(
       'git',
       ['diff', '--name-only', `--diff-filter=${diffFilterFlagValue(filter)}`, before, after],
-      {
-        cwd,
-      },
+      { cwd },
     )
     return gitDiff.stdout.trim().split('\n')
   })
@@ -109,13 +121,6 @@ const withWorkspaceOrTemporaryDirectory = async <T>(context: Context, fn: (cwd: 
     await exec.exec(
       'git',
       ['remote', 'add', 'origin', `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}`],
-      { cwd },
-    )
-    const credentials = Buffer.from(`x-access-token:${getToken()}`).toString('base64')
-    core.setSecret(credentials)
-    await exec.exec(
-      'git',
-      ['config', '--local', `http.${context.serverUrl}/.extraheader`, `AUTHORIZATION: basic ${credentials}`],
       { cwd },
     )
     return await fn(cwd)
@@ -138,4 +143,21 @@ const workspaceHasGitRepository = async (context: Context) => {
     remoteUrl === `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}.git` ||
     remoteUrl === `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}`
   )
+}
+
+const gitTokenConfigFlags = (context: Context) => {
+  const origin = new URL(context.serverUrl).origin
+  return [
+    // Reset http.extraheader config set by actions/checkout
+    // https://github.com/actions/checkout/issues/162#issuecomment-590821598
+    `-c`,
+    `http.${origin}/.extraheader=`,
+    `--config-env=http.${origin}/.extraheader=CONFIG_VALUE_AUTHORIZATION_HEADER`,
+  ]
+}
+
+const authorizationHeader = () => {
+  const credentials = Buffer.from(`x-access-token:${getToken()}`).toString('base64')
+  core.setSecret(credentials)
+  return `AUTHORIZATION: basic ${credentials}`
 }
