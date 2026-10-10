@@ -34,6 +34,18 @@ jobs:
       - run: corepack enable
       - run: pnpm i
       - run: pnpm test
+
+  e2e-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+      - run: npm install -g corepack
+      - run: corepack enable
+      - run: pnpm i
       - run: pnpm build
 
       - uses: ./
@@ -74,6 +86,14 @@ jobs:
       - run: test "$CHANGED_FILES"
         env:
           CHANGED_FILES: ${{ steps.glob-changed-files-without-actions-checkout.outputs.paths }}
+      - uses: ./
+        name: Run int128/glob-changed-files-action with paths-fallback without actions/checkout
+        with:
+          paths: |
+            **
+          paths-fallback: |
+            .github/workflows/**
+            src/**
 
   generate:
     runs-on: ubuntu-latest
