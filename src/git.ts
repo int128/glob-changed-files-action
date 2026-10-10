@@ -3,6 +3,20 @@ import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 import { type Context, getToken } from './github.js'
 
+export const lsFiles = async (): Promise<string[] | undefined> => {
+  try {
+    const code = await exec.exec('sh', ['-c', 'exec git ls-files > files'], { ignoreReturnCode: true })
+    if (code > 0) {
+      core.warning(`git ls-files exited with code ${code}`)
+      return
+    }
+    const files = await fs.readFile('files', 'utf-8')
+    return files.split('\n').filter((f) => f)
+  } finally {
+    await fs.rm('files', { force: true })
+  }
+}
+
 export type DiffFilter = {
   added: boolean
   modified: boolean
