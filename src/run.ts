@@ -1,6 +1,4 @@
-import * as stream from 'node:stream'
 import * as core from '@actions/core'
-import * as exec from '@actions/exec'
 import * as git from './git.js'
 import type { Context } from './github.js'
 import * as match from './match.js'
@@ -67,20 +65,14 @@ const matchChangedFiles = async (changedFiles: string[], inputs: Inputs): Promis
 }
 
 const matchWorkingDirectoryFiles = async (inputs: Inputs): Promise<Outputs> => {
-  const gitLsFiles = await exec.getExecOutput('git', ['ls-files'], {
-    // Suppress output to avoid large logs
-    outStream: new stream.PassThrough(),
-    ignoreReturnCode: true,
-  })
-  if (gitLsFiles.exitCode > 0) {
+  const workingDirectoryFiles = await git.lsFiles()
+  if (workingDirectoryFiles === undefined) {
     core.warning(`Failed to list the working directory files. Empty paths will be returned`)
     return {
       paths: [],
     }
   }
-  const workingDirectoryFiles = gitLsFiles.stdout.trim().split('\n')
   core.info(`${workingDirectoryFiles.length} files in the working directory`)
-
   return matchFiles(workingDirectoryFiles, inputs)
 }
 
