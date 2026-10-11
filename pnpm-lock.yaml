@@ -179,9 +179,9 @@ importers:
       '@biomejs/biome':
         specifier: 2.5.15
         version: 2.5.15
-      '@octokit/webhooks-types':
-        specifier: 7.6.1
-        version: 7.6.1
+      '@octokit/openapi-webhooks-types':
+        specifier: 12.2.0
+        version: 12.2.0
       '@tsconfig/node24':
         specifier: 24.0.5
         version: 24.0.5
@@ -282,9 +282,8 @@ packages:
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
 
-  '@octokit/webhooks-types@7.6.1':
-    resolution: {integrity: sha512-S8u2cJzklBC0FgTwWVLaM8tMrDuDMVE4xiTK4EYXM9GntyvrdbSoxqDQa+Fh57CCNApyIpyeqPhhFEmHPfrXgw==}
-    deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+  '@octokit/openapi-webhooks-types@12.2.0':
+    resolution: {integrity: sha512-akLRXeXspSB3jZDcfxEafNbpDbTQA/86Mshg7Wq6Hn5pKSKt6epct6nSZqxlnY4hdvPkZR7G1fDXqqUn7qoAQA==}
 
   '@oxc-project/types@0.153.0':
     resolution: {integrity: sha512-jSNrRIyvPVLL5E1z/tS5zLAprosGz/FuI1PWwEOz59j3E4TTTzSpqKb/RDGqJhhW0QHYISGXxq582wGx6T11Tw==}
@@ -839,7 +838,7 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.6.0
 
-  '@octokit/webhooks-types@7.6.1': {}
+  '@octokit/openapi-webhooks-types@12.2.0': {}
 
   '@oxc-project/types@0.153.0': {}
 

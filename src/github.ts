@@ -1,6 +1,6 @@
 import assert from 'node:assert'
 import * as fs from 'node:fs/promises'
-import type { WebhookEvent } from '@octokit/webhooks-types'
+import type { webhooks } from '@octokit/openapi-webhooks-types'
 
 export const getToken = (): string => {
   if (process.env.GITHUB_TOKEN) {
@@ -11,6 +11,9 @@ export const getToken = (): string => {
   throw new Error('GITHUB_TOKEN or INPUT_TOKEN is required')
 }
 
+type Payload<Event extends keyof webhooks> = webhooks[Event]['post']['requestBody']['content']['application/json']
+type PossiblePayload = Payload<keyof webhooks>
+
 export type Context = {
   repo: {
     owner: string
@@ -20,7 +23,7 @@ export type Context = {
   serverUrl: string
   workspace: string
   runnerTemp: string
-  payload: WebhookEvent
+  payload: PossiblePayload
 }
 
 export const getContext = async (): Promise<Context> => {
@@ -31,7 +34,7 @@ export const getContext = async (): Promise<Context> => {
     serverUrl: getEnv('GITHUB_SERVER_URL'),
     workspace: getEnv('GITHUB_WORKSPACE'),
     runnerTemp: getEnv('RUNNER_TEMP'),
-    payload: JSON.parse(await fs.readFile(getEnv('GITHUB_EVENT_PATH'), 'utf-8')) as WebhookEvent,
+    payload: JSON.parse(await fs.readFile(getEnv('GITHUB_EVENT_PATH'), 'utf-8')) as PossiblePayload,
   }
 }
 
