@@ -25,7 +25,7 @@ export const run = async (inputs: Inputs, context: Context): Promise<Outputs> =>
     return await matchChangedFiles(changedFiles, inputs)
   }
 
-  if ('before' in context.payload && 'after' in context.payload) {
+  if ('before' in context.payload && 'after' in context.payload && 'ref' in context.payload) {
     core.startGroup(`Comparing the before and after commits of the push event`)
     const changedFiles = await git.compareTwoCommits(context.payload.before, context.payload.after, diffFilter, context)
     core.endGroup()
